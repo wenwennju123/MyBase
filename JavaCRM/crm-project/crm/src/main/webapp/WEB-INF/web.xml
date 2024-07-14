@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app PUBLIC
+        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd"
+         version="5.0">
+
+  <display-name>leo dataService application</display-name>
+
+  <!--spring监听器加载配置文件的位置，可以使用通配符-->
+  <!--service在此处加载，然后加载数据库配置文件，加载mapper与pojo-->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:applicationContext.xml</param-value>
+  </context-param>
+  <!--注册spring框架，启动spring容器，配置spring监听器加载配置文件-->
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+
+  <!--配置中文编码过滤器-->
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <!--参数配置-->
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceRequestEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceResponseEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <!--过滤全部路径-->
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <!--注册SpringMVC框架 spring mvc 分发servlet-->
+  <!--配置DispatcherServlet 核心调度器-->
+  <servlet>
+    <servlet-name>dispatcherServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <!--指定mvc配置文件路径,controller在此处加载-->
+      <param-name>contextConfigLocation</param-name>
+      <param-value>classpath:applicationContext-mvc.xml</param-value>
+    </init-param>
+    <!--配置随服务器启动启动-->
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>dispatcherServlet</servlet-name>
+    <!--指定对应的请求路径走此Servlet-->
+    <!--拦截路径后缀是 .action 的请求-->
+    <!-- <a href="${pageContext.request.contextPath}/demo.action">点击访问</a> -->
+    <url-pattern>*.action</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>dispatcherServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+  <!--欢迎页，默认进入index controller-->
+  <welcome-file-list>
+    <welcome-file>/</welcome-file>
+  </welcome-file-list>
+</web-app>
