@@ -1,0 +1,479 @@
+JavaSE
+MySQL
+JDBC
+HTML+CSS+JavaScript 后端了解基础
+JavaWeb
+AJAX
+JQuery
+Vue
+Maven
+MyBaties
+——————————————————————————
+Spring6
+SpringMVC
+MySQL CRUD习题
+MySQL大数据量，多线程preparedStatement批量导入导出
+线程池，IO
+Linux
+Redis
+Springboot
+Git-Gitee
+SSM项目
+——————————————————————————
+——————————————————————————
+互联网相关技术
+SpringCloud
+Linux
+分布式事务
+集群
+docker
+zookeeper
+RebitMQ
+MyCat
+SpringCloudAlibaba
+互联网大型电商项目
+——————————————————————————
+——————————————————————————
+简历
+一页到两页
+个人信息 5%
+
+项目经历 40%
+
+专业技能 30% 
+
+工作经历 15%
+
+教育背景 5%
+
+个人优势 5%
+	（积极参与社区讨论，学习新技术，参与技术论坛，AI大会等，也可以注明git仓库）
+
+多写实践能力，学习能力，问题解决嗯那你，少些自我评价的废话
+成果可以量化，数字方便传达关键信息。
+
+可以加粗部分信息来吸引提问，前提是准备好相关技术。
+
+相片ps下，白底，浅色衣服
+
+建议非计算机相关专业（或者专业和求职岗位不匹配）的同学适当列举关键主修课程，优先列举和求职岗位相关的、取得分数较高的课。
+
+尽量不要用特别长的一句话、像报菜名似的列举过多技术名词。建议采用列表的形式，
+每一行单独写一个技术的多个子知识点或者一系列相关的技术，做到把每一块技术写得更具体、清晰。
+补充该技术中你掌握的知识点和技术细节，会让人觉得更真实、有说服力。
+不要把前端、后端、算法等知识点混在同一行去写。
+
+有良好的开发规范 => 熟悉或使用过哪些开发规范、用过什么工具来规范团队开发？
+
+熟悉面向对象编程 => 了解哪些软件开发原则、熟悉哪些设计模式等？
+
+学习能力强 => 擅长从开源网站例如github上，软件官网上找到api并学习实践
+曾通过官方文档、自主查阅资料自学了 XX、XX 新技术，并通过 RSS 持续关注该技术最新动态。
+
+你在这家公司用了什么技术、负责了什么样的项目、使用过什么方法和工具、解决过什么问题等，从而增加真实感。
+
+比如用了什么项目管理工具？或者跟前端协作时用了什么接口管理工具？
+
+（在 xx 公司 xx 项目中，）在 xx 情况下，运用 xx 技术，解决了 xx（或者优化了 xx），达到了 xx 效果（或者带来 xx 收益等）。
+
+为了解决 xx 问题，选用 xx 技术（或方法）实现了 xx，并使用 xx 技术（或方法）优化了 xx，实测提升了 xx 性能（或者降低了 xx 等）。
+
+建议大家多去了解你项目中用到的技术的同类技术，对这些技术的优缺点和适合的应用场景有个大致的印象。
+
+条件允许的话，强烈建议提供可在线访问的项目地址（域名尽量简短，好让面试官访问），从而体现你项目的真实性，将会是一个非常不错的加分项。
+把开源低代码项目上线部署，尝试内网穿透等手段，可以让面试官访问
+
+各项目的工作描述中尽量不要出现重复的内容，不仅浪费了空间，还会让面试官感到疲惫。
+
+只要提到 “优化” 这两个字，就一定要提供对比数据，即：优化后相对于优化前 xx 性能提升了多少？
+响应时长减少了多少？稳定性提升了多少等等，而不是脱离实际的测试去盲目做优化。
+
+——————————————————————————
+——————————————————————————
+核心：老板是做医疗器械在疫情中发家，购买厂房，转型美妆药妆，购买软件服务
+
+P1--SSM单体项目
+企业内部使用
+企业办公效能软件
+
+升级框架，迁移升级
+
+优化SQL语句，优化架构设计，业务分离
+excel表格读取与生成
+用户日志分析员工贡献，工时，出差，报销月度，年度统计
+探亲、差旅报销，年假，全薪病假转化，加班工时计算，调休计算。请假、缺勤统计、绩效考核数据评估
+
+业务审批，请假，报销单审批流程，归档
+
+发票图片上传，识别数字，Tesseract-OCR
+先上传图片，服务器存储了图片后，用图片路径去调用Tesseract-OCR，获得识别结果
+并对识别结果进行特定优化：发票、信息填报单、报销填报等
+
+
+
+
+——————————————————————————
+——————————————————————————
+P1--电商 + 物流
+技术选型：
+	后端：SpirngBoot,（SpringCloud，SpringCloudAlibaba），MyBatis,Elasticsearch,RabbitMQ,
+		Redis,MongoDB,Nginx,Druid,OSS,MinIO,JWT,SpringSecurityOauth2，Seata
+	插件：MyBatisGenerator，LogStash，Lombok，Hutool，PageHalper，Swagger-UI
+	部署：Docker，Jenkins，
+	前端：Vue，Element，Vuex，v-charts，Js-cookie
+
+开发工具
+	IDEA，RedisDesktop,Robomongo,SwitchHosts,X-shell,PowerDesigner,PostMan,Navicat
+开发环境
+	JDK1.8, MySQL5.7, Redis7.0, MongoDB5.0, RabbitMQ3.10.5, Nginx1.22, Elasticsearch7.17.3, Logstash7.17.3, Kibana7.17.3
+
+简介：
+
+电商架构图
+
+功能结构图
+
+开发进度图
+
+问题与思考：
+	OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
+	用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
+	轮播广告，商品信息，评论，品牌等如何更新，各类记录如何归档
+
+
+
+
+
+
+表设计：
+********
+主要表：
+oms_order 电商订单表：
+
+id 订单id UUID 主键 BTREE，member_id 用户账号id 外键，coupon_id 优惠卷id 外键，
+order_sn 订单编号，create_time 提交时间，member_username 用户账号
+total_amount 订单总金额，pay_amount 实际支付金额，freight_amount 运费金额，promotion_amount 促销优化金额（促销价，满减，阶梯价等）
+integration_amount 积分抵扣金额，coupon_amount 优惠卷抵扣金额，discount_amount 管理员后台调整订单使用的折扣金额
+pay_type 支付方式 默认值-1 未支付0 支付宝1 微信2 银行卡3
+source_type 订单来源 默认值-1 PC端订单0 app订单1 微信小程序2
+status 订单状态 默认值-1 待付款0 待发货1 已发货2 已完成3 已关闭4 无效订单5
+order_type 订单类型 默认值-1 普通订单0 秒杀订单1
+delivery_company 物流公司（配送方式），delivery_sn 物流单号，auto_confirm_day 自动确认时间（天）
+integration 可以获得的积分，growth 可以获得的成长值，promotion_info 活动信息
+bill_type 发票类型 默认值-1 不开发票0 电子发票1 纸质发票2，bill_header 发票抬头，bill_content发票内容，
+bill_receiver_phone收票人电话，bill receiver_email收票人邮箱
+receiver_name 收货人姓名，receiver_phone 收货人电话，receiver_post_code 收货人邮编，receiver_province 收货人省份/直辖市
+receiver_city收货人所在城市，receiver_region收货人所在区，receiver_detail_address收货人所在详细地址
+order_note订单备注
+confirm_status确认收获状态 默认值-1 未收货0 已收货1，delete_status 删除状态 默认值-1 未删除0 用户不可见1 已删除2
+use_integration下单使用的积分，payment_time支付时间，delivery_time发货时间
+receive_time确认收货时间，comment_time评价时间，modify_time修改时间
+
+建表：
+CREATE TABLE `oms_order`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '订单id',
+  `member_id` bigint(20) NOT NULL,
+  `coupon_id` bigint(20) NULL DEFAULT NULL,
+  `order_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '订单编号',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '提交时间',
+  `member_username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '用户帐号',
+  `total_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '订单总金额',
+  `pay_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '应付金额（实际支付金额）',
+  `freight_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '运费金额',
+  `promotion_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '促销优化金额（促销价、满减、阶梯价）',
+  `integration_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '积分抵扣金额',
+  `coupon_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '优惠券抵扣金额',
+  `discount_amount` decimal(10, 2) NULL DEFAULT NULL COMMENT '管理员后台调整订单使用的折扣金额',
+  `pay_type` int(1) NULL DEFAULT NULL COMMENT '支付方式：0->未支付；1->支付宝；2->微信',
+  `source_type` int(1) NULL DEFAULT NULL COMMENT '订单来源：0->PC订单；1->app订单',
+  `status` int(1) NULL DEFAULT NULL COMMENT '订单状态：0->待付款；1->待发货；2->已发货；3->已完成；4->已关闭；5->无效订单',
+  `order_type` int(1) NULL DEFAULT NULL COMMENT '订单类型：0->正常订单；1->秒杀订单',
+  `delivery_company` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '物流公司(配送方式)',
+  `delivery_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '物流单号',
+  `auto_confirm_day` int(11) NULL DEFAULT NULL COMMENT '自动确认时间（天）',
+  `integration` int(11) NULL DEFAULT NULL COMMENT '可以获得的积分',
+  `growth` int(11) NULL DEFAULT NULL COMMENT '可以活动的成长值',
+  `promotion_info` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '活动信息',
+  `bill_type` int(1) NULL DEFAULT NULL COMMENT '发票类型：0->不开发票；1->电子发票；2->纸质发票',
+  `bill_header` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发票抬头',
+  `bill_content` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发票内容',
+  `bill_receiver_phone` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '收票人电话',
+  `bill_receiver_email` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '收票人邮箱',
+  `receiver_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '收货人姓名',
+  `receiver_phone` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '收货人电话',
+  `receiver_post_code` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '收货人邮编',
+  `receiver_province` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '省份/直辖市',
+  `receiver_city` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '城市',
+  `receiver_region` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '区',
+  `receiver_detail_address` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '详细地址',
+  `note` varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '订单备注',
+  `confirm_status` int(1) NULL DEFAULT NULL COMMENT '确认收货状态：0->未确认；1->已确认',
+  `delete_status` int(1) NOT NULL DEFAULT 0 COMMENT '删除状态：0->未删除；1->已删除',
+  `use_integration` int(11) NULL DEFAULT NULL COMMENT '下单时使用的积分',
+  `payment_time` datetime NULL DEFAULT NULL COMMENT '支付时间',
+  `delivery_time` datetime NULL DEFAULT NULL COMMENT '发货时间',
+  `receive_time` datetime NULL DEFAULT NULL COMMENT '确认收货时间',
+  `comment_time` datetime NULL DEFAULT NULL COMMENT '评价时间',
+  `modify_time` datetime NULL DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 77 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '订单表' ROW_FORMAT = DYNAMIC;
+
+
+********
+pms_product 商品信息表：
+
+建表：
+CREATE TABLE `pms_product`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,   主键
+  `brand_id` bigint(20) NULL DEFAULT NULL,   外键
+  `product_category_id` bigint(20) NULL DEFAULT NULL,    外键
+  `feight_template_id` bigint(20) NULL DEFAULT NULL,     外键
+  `product_attribute_category_id` bigint(20) NULL DEFAULT NULL,    外键
+  `name` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `pic` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `product_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '货号',
+  `delete_status` int(1) NULL DEFAULT NULL COMMENT '删除状态：0->未删除；1->已删除',
+  `publish_status` int(1) NULL DEFAULT NULL COMMENT '上架状态：0->下架；1->上架',
+  `new_status` int(1) NULL DEFAULT NULL COMMENT '新品状态:0->不是新品；1->新品',
+  `recommand_status` int(1) NULL DEFAULT NULL COMMENT '推荐状态；0->不推荐；1->推荐',
+  `verify_status` int(1) NULL DEFAULT NULL COMMENT '审核状态：0->未审核；1->审核通过',
+  `sort` int(11) NULL DEFAULT NULL COMMENT '排序',
+  `sale` int(11) NULL DEFAULT NULL COMMENT '销量',
+  `price` decimal(10, 2) NULL DEFAULT NULL,
+  `promotion_price` decimal(10, 2) NULL DEFAULT NULL COMMENT '促销价格',
+  `gift_growth` int(11) NULL DEFAULT 0 COMMENT '赠送的成长值',
+  `gift_point` int(11) NULL DEFAULT 0 COMMENT '赠送的积分',
+  `use_point_limit` int(11) NULL DEFAULT NULL COMMENT '限制使用的积分数',
+  `sub_title` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '副标题',
+  `description` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '商品描述',
+  `original_price` decimal(10, 2) NULL DEFAULT NULL COMMENT '市场价',
+  `stock` int(11) NULL DEFAULT NULL COMMENT '库存',
+  `low_stock` int(11) NULL DEFAULT NULL COMMENT '库存预警值',
+  `unit` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '单位',
+  `weight` decimal(10, 2) NULL DEFAULT NULL COMMENT '商品重量，默认为克',
+  `preview_status` int(1) NULL DEFAULT NULL COMMENT '是否为预告商品：0->不是；1->是',
+  `service_ids` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '以逗号分割的产品服务：1->无忧退货；2->快速退款；3->免费包邮',
+  `keywords` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `note` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `album_pics` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '画册图片，连产品图片限制为5张，以逗号分割',
+  `detail_title` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `detail_desc` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL,
+  `detail_html` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '产品详情网页内容',
+  `detail_mobile_html` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '移动端网页详情',
+  `promotion_start_time` datetime NULL DEFAULT NULL COMMENT '促销开始时间',
+  `promotion_end_time` datetime NULL DEFAULT NULL COMMENT '促销结束时间',
+  `promotion_per_limit` int(11) NULL DEFAULT NULL COMMENT '活动限购数量',
+  `promotion_type` int(1) NULL DEFAULT NULL COMMENT '促销类型：0->没有促销使用原价;1->使用促销价；2->使用会员价；3->使用阶梯价格；4->使用满减价格；5->限时购',
+  `brand_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '品牌名称',
+  `product_category_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '商品分类名称',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 46 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '商品信息' ROW_FORMAT = DYNAMIC;
+
+
+********
+ums_member 会员表
+
+建表：
+CREATE TABLE `ums_member`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `member_level_id` bigint(20) NULL DEFAULT NULL,
+  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '用户名',
+  `password` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '密码',
+  `nickname` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '昵称',
+  `phone` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '手机号码',
+  `status` int(1) NULL DEFAULT NULL COMMENT '帐号启用状态:0->禁用；1->启用',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '注册时间',
+  `icon` varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '头像',
+  `gender` int(1) NULL DEFAULT NULL COMMENT '性别：0->未知；1->男；2->女',
+  `birthday` date NULL DEFAULT NULL COMMENT '生日',
+  `city` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '所做城市',
+  `job` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '职业',
+  `personalized_signature` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '个性签名',
+  `source_type` int(1) NULL DEFAULT NULL COMMENT '用户来源',
+  `integration` int(11) NULL DEFAULT NULL COMMENT '积分',
+  `growth` int(11) NULL DEFAULT NULL COMMENT '成长值',
+  `luckey_count` int(11) NULL DEFAULT NULL COMMENT '剩余抽奖次数',
+  `history_integration` int(11) NULL DEFAULT NULL COMMENT '历史积分数量',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `idx_username`(`username`) USING BTREE,
+  UNIQUE INDEX `idx_phone`(`phone`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '会员表' ROW_FORMAT = DYNAMIC;
+
+
+********
+表汇总：
+	cms_help 帮助表
+	cms_help_category 帮助分类表
+	cms_member_report 用户举报表
+	cms_prefrence_area 优选专区
+	cms_prefrence_product_relation 优选专区与商品关系表
+	cms_subject 专题表
+	cms_subject_category 专题分类表
+	cms_subject_comment 专题评论表
+	cms_subject_product_relation 专题与商品关系表
+	cms_topic 话题表
+	cms_topic_category 话题分类表
+	cms_topic_comment 专题评论表
+
+	oms_cart_item 购物车表
+	oms_company_address 公司仓库收发货地址表
+	oms_order 订单表
+	oms_order_item 订单所包含的商品表
+	oms_order_operate_history 订单状态操作历史表
+	oms_order_return_apply 订单退货申请表
+	oms_order_return_reason 订单退货原因表
+	oms_order_setting 订单设置表
+
+	pms_album 相册表
+	pms_album_pic 相册图片表
+	pms_brand 品牌表
+	pms_comment 商品评价表
+	pms_comment_apply 商品评价回复表
+	pms_feight_template 运费模板表
+	pms_member_price 商品会员价格表
+	pms_product 商品信息表
+	pms_product_attribute 商品属性参数表
+	pms_product_attribute_category 商品属性分类表
+	pms_product_attribute_value 产品参数信息存储表
+	pms_product_category 产品分类表
+	pms_product_category_attribute_relation 产品分类与产品属性关系表（筛选用）
+	pms_product_full_reduction 产品满减表
+	pms_product_ladder 产品阶梯价格表
+	pms_product_operate_log 产品操作日志表
+	pms_product_vertify_record 商品审核记录表
+	pms_sku_stock 商品sku码库存表
+
+	sms_coupon 优惠券表
+	sms_coupon_history 优惠券领取使用历史表
+	sms_coupon_product_category_relation 优惠卷与产品分类关系表
+	sms_coupon_product_relation 优惠卷与产品关系表
+	sms_flash_promotion 限时购表
+	sms_flash_promotion_log 限购通知记录表
+	sms_flash_promotion_product_relation 商品限时购与商品关系表
+	sms_flash_promotion_session 限时购场次表
+	sms_home_advertise 首页轮播广告表
+	sms_home_brand 首页推荐品牌表
+	sms_home_new_product 好物上新表
+	sms_home_recommend_product 商品人气推荐表
+	sms_home_recommend_subject 首页专题推荐表
+
+	ums_admin 后台用户表
+	ums_admin_login_log 后台用户登录日志表
+	ums_admin_permission_relation 后台用户与用户权限关系表
+	ums_admin_role_relation 后台用户与用户角色关系表
+	ums_growth_change_history 成长值变化历史记录表
+	ums_integration_change_history 积分变化历史记录表
+	ums_integration_sonsume_setting 积分消费设置表
+	ums_member 会员表
+	ums_member_level 会员等级表
+	ums_member_login_log 会员登录记录表
+	ums_member_member_tag_relation 会员与用户标签关系表
+	ums_member_product_category_relation 会员与产品分类关系表
+	ums_member_receive_address 会员收获地址表
+	ums_member_rule_setting 会员积分成长规则表
+	ums_member_statistics_info 会员统计信息
+	ums_member_tag 用户标签表
+	ums_member_task 会员任务表
+	ums_memu 后台菜单表
+	ums_permission 后台用户权限表
+	ums_resource 后台资源表
+	ums_resource_category 资源分类表
+	ums_role 后台用户角色表
+	ums_role_menu_relation 后台角色与后台菜单关系表
+	ums_role_premission_relation 后台用户角色和用户权限关系表
+	ums_role_resource_relation 后台角色与后台资源关系表
+
+
+共计：80+表
+
+
+——————————————————————————
+——————————————————————————
+P2--GitHub开源项目  企业级低代码平台JeecgBoot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

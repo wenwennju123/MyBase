@@ -1,0 +1,3111 @@
+========================面板账户登录信息==========================
+ 外网面板地址:  https://240e:388:6007:c400:b71:3e59:f293:9f3:8088/257e151d
+ 内网面板地址:  https://192.168.1.2:8088/257e151d
+ username: 0lckqisg
+ password: 6bdd6861
+ 均已更改为151290007
+=========================打开面板前请看===========================
+ 【云服务器】请在安全组放行 8088 端口
+ 因默认启用自签证书https加密访问，浏览器将提示不安全
+ 点击【高级】-【继续访问】或【接受风险并继续】访问
+ 教程：https://www.bt.cn/bbs/thread-117246-1-1.html
+ 8088是宝塔面板端口号，chatgptweb端口号为2024
+==================================================================
+宝塔面板交流QQ群：238981538
+==================================================================
+
+
+SpringBoot
+
+***************************************************************************************************
+环境：
+	JDK19：OpenJDK Https://jdk.java.net/19/
+	LibericaJDK Spring云原生做了特别优化
+
+本机采用JDK17 Tomcat10（jakarta）
+	Maven 配置本地仓库与阿里云镜像
+
+
+***********************************************************************************************************************
+JDK新特性：
+	Java Record
+		Record是一种特殊的Java类，用来创建不可变类。参考JEP395
+			Jackson 2.12 开始支持Record类
+		正常创建Java类时，通常会有很多重复操作，例如：
+			每个字段的set与get方法。
+			公共的构造方法
+			重写hashCode，toString()，equals() 等方法
+
+		可以理解为一个JDK语言支持的内置的Lombok（可以用来简化bean的定义）
+		Lombok可以通过注解的方式，自动执行代码模板，通过预编译的形式，将代码加入class中。
+		Lombok扩展力更强
+	
+	特点：
+		Record 类是一种用于表示 不可变 数据的紧凑型类，它是一个被隐式声明为 final 的类，
+		自动生成了字段、构造函数、equals()、hashCode() 和 toString() 等方法。
+
+	优点：
+		简洁性：使用 Record 类可以大大简化代码，减少样板代码的编写量。
+			Record 类会自动为每个字段生成 getter 方法，并且提供了默认的 equals()、hashCode() 和 toString() 方法的实现，
+			使得定义和使用不可变数据类型更加方便。
+		不可变性：Record 类的字段是 final 的，因此无法在对象创建后修改其字段的值。
+			这有助于确保数据的一致性和线程安全性。
+		可读性：Record 类提供了更具可读性的 toString() 方法的默认实现，以便更好地进行调试和日志记录。
+		语义清晰：Record 类用于表示数据对象，通过明确的语义传达其意图。
+			由于 Record 类是 final 的，它们不能被子类化和修改，保持了数据模型的一致性。
+		默认实现：Record 类提供了默认的 equals() 和 hashCode() 方法实现，
+			它们会自动比较 Record 对象的字段值，并根据字段值生成哈希码。
+			这样可以避免手动编写这些方法，减少了出错的可能性。
+
+	作用：
+		只可读，不可写。主要用于数据的载体，存储数据。适用于简单的数据传输对象（DTO）和不可变数据模型。
+		如果需要更复杂的行为，或者需要在未来添加额外的功能，那么传统的类定义方式可能更合适。
+		在编写简单的数据模型时能够提高开发效率和代码质量。
+
+	使用：
+		直接创建Class 就有选项：
+			Class		普通Java类
+			Interface	接口
+			Record		不可变类
+			Enum		枚举类
+			Annotation	注解
+
+		可以添加示例方法与静态方法。
+		可以添加构造方法，有三种：紧凑，规范（全部字段），定制（部分字段）。
+示例：
+public record Student(Integer id, String name, String email, Integer age) implements Print{
+    /*全参构造就是规范的构造方法，此时紧凑构造方法与之合并，参数列表省略*/
+    public Student{
+        if (id < 1) {
+            throw new RuntimeException("id < 1");
+        }
+    }
+    /*自定义构造方法*/
+    public Student(Integer id, String name){
+        this(id, name, null, null);
+    }
+    /*实例方法*/
+    public String concat(){
+        /*两个参数的format方法*/
+        return String.format("姓名是%s, 年龄是%d", this.name, this.age);
+    }
+    /*静态方法*/
+    public static String toUpperCaseEmail(String email){
+        /*Optional是JDK8新特性，直接提供了为空情况下的处理，避免了空指针异常*/
+        return Optional.ofNullable(email).orElse("empty email").toUpperCase();
+    }
+    /*实现接口方法*/
+    @Override
+    public void print() {
+        String s = "姓名是：" + this.name + "，年龄是：" + this.age.toString() + "，邮箱是："+ this.email + "；";
+        System.out.println(s);
+    }
+}
+
+	使用：
+		作为局部对象使用，在代码块中定义并使用Record。
+		是Record比较常见的用法，方便编写测试等数据，减少类的编写
+示例：
+    @Test
+    public void test04() {
+        /*测试局部Record对象*/
+        record SaleRecord(Integer Id, String name, Double money){};
+        /*创建对象*/
+        SaleRecord sr = new SaleRecord(100, "苹果", 100.01);
+        /*测试输出*/
+        System.out.println("sr = " + sr);
+    }
+
+	使用：
+		多个Record可以嵌套定义，一个Record类可以作为另一个Record类的引用类型参数属性
+		即一个Record类对象，可以作为另一个Record类构建时的参数
+示例：
+    @Test
+    public void test05() {
+        /*测试Record的嵌套使用*/
+        record Apple(String name){};
+        record Pen(String name){};
+        record ApplePen(Integer id, Apple apple, Pen pen){};
+
+        Apple apple = new Apple("This is an apple!");
+        Pen pen = new Pen("This is a pen!");
+        ApplePen ap = new ApplePen(1001, apple, pen);
+
+        System.out.println("ap = " + ap);
+
+    }	
+
+
+	特点：
+		Record类型可以被 instancof 运算符判断（JDK19）可以自动过滤对象为空的情况
+		java.lang.Record 是所有Record类的父类
+		Record类可以实现 java.io.Serializable序列化和反序列化
+		Record支持泛型，例如 record apple<T>(T t){}
+		java.lang.Class boolean isRecord(); 
+			判断一个类的类型是否是Record类型（要通过反射获取）
+		java.lang.Class RecordComponent[] getRecordComponent;
+			使用类类型来获取，获取该Record类型中所有字段的类类型和字段名，返回数组。同反射机制
+			例如输出 java.lang.String id
+					 com.leowork.pk1.Student student
+					 ...
+
+
+***************************************************************************************************
+JDK新特性
+	Switch 语句扩展 参考JEP 361 JDK19
+		支持箭头表达式
+		支持yied返回值
+		支持Java Record
+	
+	其中的case标签可以进行扩展，例如写表达式等
+		case label -> 表达式|throw 语句|block
+
+举例：
+	Integer week = 1;
+	String memo = "";
+	switch(week){
+		case 1 -> memo = "今天星期一";
+		case 2,3,4,5 -> memo = "工作日"；
+		case 6,7 -> memo = "休息日";
+		default -> throw new IllegalArgumentException("日期无效");
+	}
+
+	其中的case标签使用yield，可以返回值。例如将返回结果赋值给变量
+
+举例：
+	变量 = switch(value){
+		case v1 : yied 返回值1;
+		case v2 : yied 返回值2;
+		case v3 : yied 返回值3;
+		...
+		default : yied 返回值default;
+	}
+
+	其中case标签可以进行扩展，箭头后可以写代码块完成简单业务功能，其中也可以使用yield返回值
+
+举例：
+	String 变量 = switch(value){
+		case v1 -> {
+			System.out.println(”周一要开会“);
+			yield "今天星期一";
+		}
+		case v2 -> {
+			...
+		}
+		case v3 -> {
+			...
+		}
+		...
+		default -> {
+			...
+		}
+	}
+
+	注意：箭头表达式 case -> 与 普通 case : 的形式不可以混用
+
+Switch的value可以是Record类型的 这里obj可以是判断几个record类型的对象
+	int result = switch (obj){
+		case Line(int x, int y)-> {
+			sout;
+			yield x + y;
+		}
+		case Shape(int a, int b) ->{
+			sout;
+			yield x * y;
+		}
+		...
+		default -> 0;
+	}
+	
+
+
+***************************************************************************************************
+JDK新特性
+	Text Block文本块
+		用来处理长字符串，多行文本。无需链接”+“ 单引号，换行符等。参考JEP 378 JDK15
+		有点类似python
+	
+	使用：
+		"""
+		内容
+		"""
+
+	举例：
+	String sqlSelectById = """
+		内容
+		内容
+		内容
+		...
+		""";
+	
+	注意： 文本块不可以放在单行上。
+			三个双引号""" 位于起始和结束必须独立换行，不可以在中间文本没有中间行结束符的情况下跟随
+
+	在使用上文本块和普通字符串是相同的，可以equals()，可以”+“ 拼接 可以使用String的一些工具方法
+
+	缩进相对于结尾的 """ 计算
+
+	隐式换行符 \  在文本块中的作用是将上下文链接 自身变成空格
+
+	转义符 \" 
+
+举例：使用formatted()方法给占位符传值
+	String info = """
+		Name:%s
+		Address:%s
+		Id:%d
+		""".formatted("张三", "上海", 20);
+
+
+***************************************************************************************************
+JDK新特性
+	var声明局部变量
+		声明具有非空初始化的局部变量，让代码更加简洁。但是会影响可读性，个人不建议使用
+
+	特点：
+		var是保留字，不是关键字。
+		通常用来在方法内的局部变量，必须有初值。
+		一次只可以声明一次变量。
+		var的动态类型是编译器根据变量所赋值来推断。
+		可以代替显示类型，代码简洁，但是降低可读性
+		声明简单临时变量时可以使用
+
+举例：
+	try (Stream<Customer> result = dbconn.executeQuery(query)){...}
+隐式：
+	try (var result = dbconn.executeQuery(query)){...}
+
+
+***************************************************************************************************
+JDK新特性
+	sealed密闭类 JDK17 JEP409
+
+特点：
+	限制继承。限制无限的扩张。Java中通过继承增强，扩展了类的能力，复用某些功能，
+	当这些能力不受控，与原有类的设计相违背，导致逻辑紊乱。
+
+Java中已有的类似sealed的设计
+	final关键字，修饰类不可以被继承
+	private 限制私有类
+
+使用：
+	public sealed class 类名 permits 允许继承的子类1，允许继承的子类2，允许继承的子类列表...{
+	}
+子类：
+	final修饰，表示继承终止
+	sealed修饰，子类也是密闭类，需要其子类实现，继续向下 permits 子类
+	non-sealed修饰，取消密闭，不再限制
+
+密闭接口
+	public sealed interface 接口名 permits 实现{
+	}
+
+密闭类主要用在代码设计阶段，规划继承结构使用。规范代码编写，避免逻辑混乱。
+
+
+***************************************************************************************************
+JDK新特性
+	StringJoiner
+    是Java中的一个类，用于将多个字符串连接起来形成一个新的字符串，更加便捷的添加其中的分隔符。
+	它是在Java 8中引入的，并位于java.util包中。使用方法类似StringBuilder
+
+StringJoiner提供了一种简单的方式来创建和操作用特定分隔符分隔的字符串序列。
+	你可以指定一个分隔符作为构造函数的参数，然后使用add方法将需要连接的字符串逐个添加到StringJoiner实例中。
+	最后，使用toString方法将这些字符串连接起来，得到最终的结果。
+
+以下是一个使用StringJoiner的简单示例：
+
+	StringJoiner joiner = new StringJoiner(", "); // 创建一个以逗号和空格为分隔符的StringJoiner对象
+
+	joiner.add("Apple"); // 添加第一个字符串
+	joiner.add("Banana"); // 添加第二个字符串
+	joiner.add("Orange").add("可以直接加在末尾"); // 添加第三个字符串
+
+	String result = joiner.toString(); // 将字符串连接起来
+
+	System.out.println(result); 
+	输出：Apple, Banana, Orange
+
+在上面的示例中，我们首先创建了一个StringJoiner对象，并指定了逗号和空格作为分隔符。
+	然后，我们使用add方法逐个添加了三个字符串。最后，通过调用toString方法，将这些字符串连接起来并将结果存储在result变量中。最终，我们打印出了连接后的结果。
+
+除了add方法，StringJoiner还提供了其他一些方法，
+	如setEmptyValue（设置当没有元素时的默认值）
+	  merge（合并另一个StringJoiner对象）等，以便更灵活地操作字符串连接的过程。
+
+总的来说，StringJoiner提供了一种简单且方便的方法来连接多个字符串，并在它们之间添加分隔符。
+
+
+***************************************************************************************************
+SpringBoot
+	微服务框架，倡导 约定优于配置。用来简化新Spring应用的初始化搭建以及开发过程。
+	提供了例如：自动化配置 starter启动器，简化Maven配置，内嵌Servlet容器，应用监控等功能
+
+特点：
+	创建独立的Spring应用程序。
+	内嵌了Tomcat，Jetty，Undertow容器，无需再安装外置的Tomcat等
+	提供了starter，简化构建配置，简化依赖管理，简化版本控制
+	尽可能的自动化配置spring应用和第三方的库
+	提供生产指标，例如指标，健壮检查和外部化配置。
+	没有代码生成，无需XML配置。
+
+特性：
+	开箱即用：
+		使用脚手架创建项目，基础配置已经完成，集成大部分第三方库对象，无需配置就可以直接使用。
+		相比于SSM省略了很多配置的过程
+	约定优于配置：（重点）
+		也叫做按照约定变成
+		SpringBoot定义了常用类，包的位置和结构，默认的设置。例如包扫描等。项目就可以按照预期运行。
+		并会创建默认的测试类。
+		约定：controller service dao 应该放在根包的子包中，路径框架已经搭建好，application时默认的配置文件。
+
+SpringBoot3 最小支持JDK17 允许17-20
+
+脚手架时spring提供的一个web应用，帮助开发人员迅速搭建springboot项目基础
+
+SpringBoot创建的是Spring应用，可以使用Spring框架的各种功能，IoC AoP等
+	Spring家族，例如SpringBoot SpringFarmeWork SpringData Spring Security SpringBatch批处理
+		Spring Shell SpringMVC Spring for Apache Kafka SpringWebFlux响应式web框架
+	以及集成一系列第三方框架
+		MyBatis MyBatisPlus Druid MQ等
+
+2006年10月 SpringFramework 2.0发布 国内开始向spring迁移
+2009年12月 Spring3.0发布
+2017年09月 Spring5.0发布
+2022年11月16日 Spring6.0发布 也就是SpringBoot3所使用的spring版本
+2022年11月24日 SpringBoot3发布 预计使用到2025年
+
+SpringBoot消除了Spring应用的一些配置文件，臃肿样版代码，通过自动配置，更快更简介的开发。
+	比如配置MyBatis，配置DispatcherServlet
+
+与SpringCloud的关系
+	SpringCloud可以看作一个创建微服务分布式项目的诸多工具的集合
+		SpringCloud将诸多SpringBoot创建的微服务联系起来，形成高可用的，安全稳定的大型应用
+	微服务是一种架构和组织方法。根据业务功能类型，抽象出独立的功能，叫做服务。每一个服务单独运行一个应用程序
+	通过轻量级的通信机制与其他服务通信。协调完成业务请求的处理。
+	这种服务是相互独立的，互相之间是隔离的，可以独立运行部署。达到了与其他服务解耦合的效果。
+	微服务可以看作是模块化的应用，用多个独立的服务构成一个大型应用。
+	通过http或rpc将多个部分练习起来。请求沿着一定的请求路径，完成服务处理。
+
+SpringBoot3新特性
+	最小JDK17
+	底层依赖从JavaEE 迁移到了 JakartaEE API
+		即原来javax开头的包名变为jakarta
+		例如Jakarta.servlet.http.HttpServlet 原来 javax.servlet.http.HttpServlet
+	支持GraalVM原生镜像，将Java应用编译为本机代码，显著提供内存和启动性能改进。
+		新的虚拟机，提供多语言支持。提供云原生支持。
+	对第三方库更新了版本支持
+	自动配置文件的修改
+	提供新的声明式Http服务，在接口方法上声明@HttpExchange即可获取http远程访问，代替OpenFeign
+	Spring HTTP 客户端基于Micrometer的可观察性，跟踪服务的一套API，记录服务运行状态
+	AOT预编译，Ahead Of Time 运行前编译
+	支持Servlet6.0规范
+	支持Jaskson2.14
+	SpringMVC默认情况下使用PathPatternParser，删除过时的FreeMarker，JSP支持
+
+
+***************************************************************************************************
+将Spring Boot 2.x的项目升级为基于Spring Boot 3.x的项目，一般需要进行以下步骤：
+
+1. 更新依赖版本：将项目中的Spring Boot相关的依赖版本更新为最新的3.x版本。
+	可以通过查看Spring Boot官方文档或官方GitHub仓库了解最新的版本号。
+
+2. 修改SpringBoot的启动类：在项目的启动类上，将 @SpringBootApplication 注解中的 scanBasePackages 属性
+	修改为 scanBasePackageClasses ，并将其值设置为启动类所在的包。
+
+3. 处理不兼容的变更：根据Spring Boot的升级指南，逐个查看项目中使用的Spring Boot功能、配置和API，
+	判断是否有不兼容的变更。对于不兼容的变更，根据指南提供的解决方法进行修改。
+
+4. 更新配置文件：检查项目中的配置文件，确保与新版本的Spring Boot兼容。
+	特别是需要注意检查新版本中是否有新的配置项，以及是否有配置项的命名、格式等发生了变化。
+
+5. 运行和测试：完成以上步骤后，重新编译项目，并运行测试用例进行验证。
+	确保项目在升级后能够正常运行，并检查是否有任何错误或异常。
+
+6. 验证功能：对项目中的各项功能进行全面测试，确保在升级后所有功能都能够正常工作。
+	如果发现任何问题，可以查看Spring Boot的官方文档、GitHub问题跟踪或社区论坛，寻找解决方案或提出问题。
+
+请注意，升级到新版本的Spring Boot可能会引入一些不可预知的变化和兼容性问题。
+	因此，在进行升级之前，建议先备份项目代码，并在一个相对较小的规模上进行测试。
+	同时，也建议仔细阅读相关的升级指南和文档，以便更好地理解和适应新版本的变化。
+
+Spring Boot的升级指南提供了关于从旧版本升级到新版本的详细说明和建议。
+	这些指南通常可以在Spring Boot的官方文档中找到。以下是一般而言，升级指南可能包含的主要内容：
+
+1. 新版本的功能和改进：升级指南会介绍新版本引入的主要功能和改进，并解释如何使用这些新特性。
+
+2. 不兼容的变更：升级指南会列出可能引起不兼容性问题的变更，并提供相应的解决方案或迁移指南。
+	这些变更可能涉及API、配置项、注解、依赖项等方面。
+
+3. 废弃的功能和替代方案：升级指南会列出已废弃的功能，并推荐替代方案。
+	这样可以帮助开发者在升级时避免使用已被弃用的功能。
+
+4. 依赖项的更新：升级指南会提供关于Spring Boot依赖项的最新版本信息，
+	并推荐适合的版本选择。这些依赖项包括Spring Framework、Spring Data、Spring Security等。
+
+5. 配置文件和属性的变化：升级指南会列出与配置文件和属性相关的变化，并提供相应的更新说明。
+	这可以帮助开发者及时调整项目中的配置文件和属性设置。
+
+6. 其他注意事项：升级指南还可能包含其他与升级相关的注意事项，如性能改进、修复的bug等。
+
+
+***************************************************************************************************
+脚手架
+	用来辅助创建程序的工具。Spring Initializr是创建SpringBoot项目的脚手架，快速建立SpringBoot项目。
+	是一个web应用，Idea提供了集成。
+	地址 https://start.spring.io/
+	阿里云脚手架 https://start.aliyun.com/
+
+使用：
+	网页端，创建，填写信息，选择依赖，Generate 下载代码 导入模块
+	Idea：
+		新建模块，从Spring Initializr新建
+		指定脚手架访问地址，填写信息，选择依赖，生成模块
+
+依赖讲解：
+	spring-boot-starter  spring的依赖，直接或间接，必定包含。其中包含有spring6的core Ioc aop mvc等依赖
+
+SpringBoot的项目结构：
+单一模块：
+	com.leowork.模块名称
+				  +---Application.java		启动类
+				  +---controller		控制器
+					----StudentController.java
+					----ScoreController.java
+					----...
+				  +---service		业务层
+					----interface	业务接口
+					----impl		接口实现类
+				  +---repository	持久层包 dao
+				  +---model			模型
+					----entity		实体类
+
+具有 @SpringBootApplication 注解的是启动类，也叫做入口类。具有main方法。
+
+多模块:
+	在跟包下创建每个模块的子包，子包按照单一模块来建立
+
+
+***************************************************************************************************
+starter启动器
+	具有注解 @SpringBootApplication
+	main方法
+		执行 SpringAppliation.run(启动类.class, args);
+
+注解：
+	@RestController 是 @Controller 的别名，代表了其里面每个方法都默认标注 @ResponseBody
+	@getMapping 是 @RequestMapping 的别名，代表里面的request请求方式都是get请求
+
+SpringBoot3默认集成Tomcat10，与Servlet6.0 JakartaEE保持同步
+
+starter是一组依赖描述，包括了相关技术的依赖和版本管理。一站式添加。
+	包含依赖的GAV，传递依赖的GAV，配置类配置项
+
+举例 spring-boot-starter-web 包含了
+	直接依赖
+	spring-boot-starter
+	spring-boot-starter-json
+	spring-boot-starter-tomcat
+	spring-web
+	spring-webmvc
+	及这些依赖的传递依赖
+
+SpringBoot一站式解决了依赖以及其版本号兼容问题，提高了开发效率
+
+在pom文件中，使用parent标签指定父项目 spring-boot-starter-parent
+	表示继承SpringBoot的父项目，来获得合理的统一的默认值和完整的依赖树。maven坐标和版本。
+	提供JDK版本，公共依赖版本，自动化的资源过滤，插件版本等。
+
+parent又依赖 spring-boot-dependencies
+	规定了绝大多数的常用的第三方库的依赖版本
+
+不使用父项目parent就需要手动管理依赖，手动配置spring-boot-dependencies
+	或者手动定义父项目去继承。适用于内部或者需要独立管理的。
+
+
+***********************************************************************************************************************
+核心注解*****Application***COnfiguration
+@SpringBootApplication
+	复合注解，包含：（很多SpringBoot的注解是Spring中注解的别名或者复合注解，起到更加整合便利的作用）
+	@SpringBootConfiguration
+		包含 @Configuration
+		是JavaConfig功能，配置类。结合 @Bean注解将对象注入到SpringIoC容器
+	@EnableAutoConfiguration
+		开启自动配置，将spring和第三方库中的对象创建好，注入spring容器，例如dispatcherServlet
+		这个注解解决了大量的编写xml配置文件，与样板代码。由框架提供
+	@ComponentScan
+		开启包扫描，组件扫描器。按照约定路径，扫描Controller，Service，Repository，Component注解
+		创建对象并注入到容器中
+		作为扫描包的根，扫描当前包和所有子包
+		可以手动修改扫描路径，例如添加常量类，工具类，定时任务类的路径扫描等
+
+run方法，第一个参数是源，也就是这个配置类。表示从哪个类加载bean注入到容器。
+	这个类可以写多个，也就是多个源多个配置类
+不过推荐使用单一源。推荐的约定方式就是将当前类作为配置类，完成bean的注入
+	一个启动类就可以完成所有注入功能
+
+run方法底层包含了整个springboot启动要调用的方法，例如启动一些容器，监听器，banner，refresh
+	返回值是ConfigurationApplicationContext容器对象，父类是ApplicationContext
+	可以直接从容器中获取对象
+		applicationContext.getBean(类名);
+		可以直接获取service单独调用等进行测试
+
+SpringBoot项目运行方式：
+	使用开发工具运行main方法
+	使用maven插件 mvn spring-boot:run
+	使用java命令 java -jar
+		可以在idea自带的Terminal控制台，输入java命令，类似linux指令。
+
+SpringBoot打包的jar文件与普通的jar文件的区别：
+	可以执行
+	具有BOOT-INFO，包括应用的class和依赖jar
+	包含spring-boot-loader，就是执行jar的spring-boot类 
+
+
+***********************************************************************************************************************
+外部化配置
+	应用程序 = 代码 + 数据
+	SpringBoot允许在代码之外，提供应用程序运行的数据。避免硬编码，符合OCP，提供更强的灵活性。
+	可以使用各种外部配置源。常用的是properties，YAML或命令行。
+
+	配置文件名称默认是application
+	格式：application.properties  application.yml
+			key = value              key: value (注意空格是必须的)
+
+yml文件中，大小写敏感，也就是区分大小写。
+	使用缩进表示层级关系，且层级只可以使用空格表示。
+	相同层级元素左对齐，但是空格数不限制
+	注释采用 # 只支持单行注释，且必须放在开头
+	支持的数据结构：
+		对象（键值对的集合map set等，也叫映射mapping/哈希hashes/字典dictionary）
+		数组，一组按次序排列的值，又称为序列sequence，列表list
+		标量 scalars，单个的，不可再分的值。例如单个数字，字符串，布尔值等。
+
+springboot默认有限读取properties，但是yml层次更加清晰，推荐使用
+
+读取配置文件：
+	@Value注解，可以读取单个值 语法 ${key:默认值}
+	
+	@Value("${app.name}")
+    private String name;
+
+yml扁平化，层次分明可读性好，避免重复配置，推荐使用
+app:
+  name: value
+    customername: value
+  book: value
+  car: value
+
+Environment环境对象
+	是外部化的抽象，是所有数据来源的集合，从中可以读取application配置文件，环境变量，系统属性。
+	可以表示所有写在配置文件中的key和value
+	在bean中注入Environment，调用Environment.getProperty(key)方法即可获取 
+	就是上述中 @Value注解的替代，
+
+对于大型项目，组合了多个框架，中间件。配置会多种混杂，降低可读性。
+	需要将每一个框架独立配置，提供单独的配置文件，最后将多个文件集中到application中
+	要使用导入文件功能
+spring:
+	config:
+		import: 路径，路径，路径
+
+多环境配置
+	例如mysql的配置，访问数据库的ip，用户名和密码，Redis的端口，配置文件的路径。windows与linux系统，tomcat服务器之间等
+	Spring Profiles 表示环境。有助于隔离应用程序配置，甚至可以隔离bean
+		并使他们仅在某些环境中可以使用。例如开发环境，测试环境，生产环境，上线，特性，bug。一个环境就是一组相关的配置数据。
+		方便开发人员，测试人员，用户等等在不同情境下对于系统的使用。
+	至少会准备两套：开发环境与测试环境
+
+举例：
+	application-dev.yml
+	application-test.yml
+	application-prod.yml
+	...
+SpringBoot启动时，会将所有的application 开头的配置文件都加载
+
+编写：
+#开发环境配置文件
+myapp:
+  memo: 开发环境配置文件
+#指定环境名称
+spring:
+  config:
+    activate:
+      on-profile: dev	
+
+在application.yml文件中激活某个环境（配置文件）
+spring:
+  profiles:
+    active: dev
+
+
+***********************************************************************************************************************
+获取多个值，数组或集合等：
+绑定bean的方式
+	最为常用
+	@Value只能绑定单个属性，当属性角度或是数组，list等属性时不好处理。
+	可以将多个数据封装为bean，属性bean。强类型绑定。是类型安全的Bean
+
+使用：
+	绑定复数的简单类型数据：
+	bean中提供属性，属性的setget方法。
+		添加注解 @ConfigurationProperties(prefix = "多个key的公共前缀")，表示类的属性值来源于配置文件
+			也需要添加 @Component 或 @configuration（是Component的别名，同service，controller，reporistory等）
+			来让bean加入spring管理
+		表示使用Bean对象读取配置项。
+		属性名要与key参数配置保持一致，springboot就会自动读取属性值（拼接方法名）并set注入到属性Bean中
+		属性Bean中不支持静态属性，也就是不支持static
+	SpringBoot的自动配置中，大量使用了绑定Bean和 @ConfigurationProperties注解，提供对框架的定制参数
+	项目中的可变数据，参数等。均建议在yml或者properties文件中提供，不可以写死到代码中。违背OCP原则，降低灵活性。
+
+@ConfigurationProperties 可以配置多个简单类型的属性，也可以支持Map，List，数组等类型。还可以验证属性的基本格式
+
+举例：
+app:
+  name:root
+  owner:root
+  port:8080
+
+对应（配置文件下的每一个第一级的key，对应一个bean，名称保持一致来完成注入。如果不对应则无法完成属性注入）
+（下一级如果有多个子key，则会对应另一个bean的引用）
+
+@Configuration(proxyBeanMethods = false)  取消代理，创建普通bean，与其他bean没有关系，无需容器
+@ConfigurationProperties(prefix = "app")
+public class AppBean(){
+
+	无参构造
+
+	private String name;
+	private String owner;
+	private Integer port;
+
+	提供set get 方法，重写toString() HashCode() equals()
+
+}
+
+调用：
+
+注入AppBean
+@Resource
+private AppBean ab;
+获取属性值
+ab.getName();
+获取类型
+ab.getClass(); 如果不添加上述取消代理。输出结尾 $$SpringCGLIB$$0 表示是Spring的代理对象。
+
+
+嵌套Bean
+	意为一个Bean中包含其他Bean作为属性，将配置文件中的配置项，绑定到Bean以及引用类型的成员
+	举例：
+app:
+  name:root
+  owner:root
+  security:
+	pro1: 123456
+	pro2: 456789
+在bean中具有另一个bean作为属性（引用类型）
+	private Security security； 
+
+Spring会自动进行依赖注入，注意key和属性名需要对应
+
+
+注解扫描配置
+让类上的 @ConfigurationProperties注解起到作用，需要配置注解扫描
+即配置 @EnableConfigerationProperties // @SpringBootApplication上也有类似
+****或者启动类上添加 @ConfigurationPropertiesScan(basePackages = {"需要扫描的包名"}) 
+		参数是数组所以需要大括号  //此注解具有上述注解作为元注解
+	就是以前Spring所需要配置的包扫描路径，配置自动扫描就可以替代此包下所有bean上的 @Configuration
+
+
+特殊情况，对于没有源代码，在内存中通过一些字节码操作，代理模式反射机制等生成的bean或者第三方bean，也需要用属性配置来注入。
+	可以将 @ConfigurationProperties 结合 @Bean一起在方法上使用
+
+
+绑定集合Map，List以及Array
+	数组和List 
+		使用"-"表示一个成员
+	Map集合使用key:
+				 value:
+			   key:
+				 value:
+	的形式
+	如果成员（值）是一个对象，则需要对应提供对象的所有属性。
+	所有的属性名必须一一对应才能完成注入
+
+#String[] names
+names:
+   lisi
+   zhangsan
+   wangwu
+
+#List<MyServer> servers
+servers:
+   title: server1
+    ip: 168.123.123.1
+   title: server2
+    ip: 196.123.123.2
+
+#Map<String, User> users
+users:
+  user1:
+    name: zhangsan
+    sex: male
+    age: 123
+  user2:
+    name: lisi
+    sex: female
+    age: 456
+    
+
+指定数据源文件
+	可以将特定某个文件作为数据来源，使用 @PropertySource("类路径")注解（value省略 数组大括号省略）
+		用来加载指定的properties文件或者xml配置文件
+	@PropertySource 和 @Configuration共同使用，也需要添加 @ConfigurationProperties(prefix = "公共前缀")注解来读取
+
+application配置文件默认的位置
+	项目根目录
+	项目根目录的 /config 目录
+	resources/config 目录
+	resources目录
+
+***********************************************************************************************************************
+复习资源绑定器
+	在程序中访问本地化资源的机制，可以是属性文件（.properties）或资源束文件（.java）
+
+Locale locale = new Locale("zh", "CN"); // 指定语言环境为中文简体
+ResourceBundle bundle = ResourceBundle.getBundle("MessageBundle", locale);
+其中，MessageBundle是资源文件的名称，.properties或.java扩展名可以省略。
+
+访问本地资源
+	getString(key)：获取指定键（key）对应的字符串值。
+	getObject(key)：获取指定键对应的对象。
+	getKeys()：获取所有资源文件中定义的键。
+
+可以用于绑定一些需要用户修改的信息，例如账号密码。或者常量，提示信息，定时任务配置时间等等。
+
+
+***************************************************************************************************
+创建对象的三种方式：
+	将对象注入到Spring容器，方式有下：
+	使用XML配置文件配置bean标签
+	使用JavaConfig，提供注解 @Configuartion和 @Bean
+	使用创建对象的注解 @Controller @Service @Respority @Component
+
+SpringBoot不建议使用xml进行配置，如果需要xml提供bean的声明，
+	可以在启动类上使用 @ImportResource(locations = "类路径")加载xml文件来完成Bean的注册
+
+
+***************************************************************************************************
+SpringBoot的 AOP 面向切面编程
+	底层实现 动态代理
+	用来增强代码，扩展功能，交叉业务，公共代码的实现。事务的控制，提交和回滚也是通过AOP实现的
+	来自aspectj框架
+
+Aspect 切面。编写功能增强代码。
+	使用 @Aspect注解表示当前类是切面类
+	切面类是一个普通类。
+	切面类中编写的增强代码将会通过动态代理的方式，对原有目标方法进行增强，具体生效位置需要编写。
+
+Joinpoint 连接点
+	链接切面和目标对象，或者一个方法名称，一个包名，类名。在这个特定的位置执行切面中的功能代码。
+
+Pointcut 切点
+	对连接点进行筛选，一个类中的所有方法都可以是Joinpoint
+
+Advice 通知/增强
+	表示增强代码的执行位置，Java代码执行的单位是方法，方法中编写了业务逻辑代码。
+	在切面类的切点方法上添加：
+	@Before 在切点方法之前
+	@After  在切点方法之后
+	@Around 在切点方法之前+之后
+	@AfterRunning 在切点方法返回后
+	@AfterThrowing 在切点方法抛出异常后
+	并编写切点表达式，来精确指定需要增强的方法
+举例：
+	@Before("execution(* com.leowork.aop.service..*.*(..))")
+
+需要添加maven依赖
+	<artifactId>spring-boot-starter-aop</artifactId>
+	其中就包含了aspectj的依赖
+
+
+***************************************************************************************************
+SpringBoot的自动配置 重点
+	
+配置 @EnableAutoConfigurtation 通常由 @SpringBootApplication注解带入
+自动配置会从类路径中扫描jar包，根据jar包中的内容尝试创建所需要的对象。
+	如果有mybatis的jar包，就会尝试创建dataSource，读取配置文件中的url，username，password，进而链接数据库
+						尝试创建SqlSessionFactory，Dao接口的代理对象等
+	来让MyBatis自动配置成功，节约开发时间
+
+第三方框架有很多，例如数据库连接池，线程池，消息队列MQ，Kafka，Redis等等
+
+自动配置类命名：
+	XXXXXAutoConfiguration
+	在spring-boot-autocconfigure-版本.jar中，定义了非常多的自动配置类，这也是一种规范思想，第三方框架想要兼容
+		就需要在自己框架的starter中添加自己的XXXXXAutoConfiguration
+
+
+自动配置imports文件
+	在springBoot3之前，在spring.factories中 罗列了可以自动配置的自动配置类的列表，2.7之后进行了优化
+	spring.boot.autoconfigure包下
+	叫 org.springframework.boot.autoconfigure.AutoConfiguration.imports
+	如果需要配置自己的自动配置类则需要添加入该文件
+
+使用的技术叫SPI Service Provider Interface，是Java提供的一套用来被第三方实践或阔爱站的接口，可以用来启用框架和替换组件
+	将要替换的新的启动类在文件中进行替换，则可以切换启用的组件
+	无需修改源代码，只要改几行配置即可快速切换
+
+
+启用自动配置注解 @EnableAutoConfiguration
+	作用：启用自动配置
+	具有元注解 @Import({AutoConfigurationImportSelector.class})
+
+		public class AutoConfigurationImportSelector 
+			implements DeferredImportSelector, BeanClassLoaderAware, ResourceLoaderAware, 
+						BeanFactoryAware, EnvironmentAware, Ordered {
+			
+			重要方法 找 @AutoConfiguration 是springboot对一系列注解进行的整合
+			然后SpringBoot遍历 xx.imports 列表，加载所有的自动配置类
+			然后对list进行去重（直接new ArrayList(new LinkedHashSet(list))）
+			然后排除指定的自动配置
+			然后进行过滤
+			然后逐一运行并创建对象
+
+			protected AutoConfigurationEntry getAutoConfigurationEntry(AnnotationMetadata annotationMetadata) {
+				if (!this.isEnabled(annotationMetadata)) {
+				    return EMPTY_ENTRY;
+				} else {
+				    AnnotationAttributes attributes = this.getAttributes(annotationMetadata);
+				    List<String> configurations = this.getCandidateConfigurations(annotationMetadata, attributes);
+				    configurations = this.removeDuplicates(configurations);
+				    Set<String> exclusions = this.getExclusions(annotationMetadata, attributes);
+				    this.checkExcludedClasses(configurations, exclusions);
+				    configurations.removeAll(exclusions);
+				    configurations = this.getConfigurationClassFilter().filter(configurations);
+				    this.fireAutoConfigurationImportEvents(configurations, exclusions);
+				    return new AutoConfigurationEntry(configurations, exclusions);
+				}
+			}	
+			...
+		}
+
+@AutoConfiguration 新增加的注解，用来表示是自动配置类，代替 @Configuration
+
+第三方框架例如mybatis，都会有其对应的starter，都会添加到 xx.imports中，记录了所有的类路径
+
+举例：
+mybatis的自动配置类
+	org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
+
+	@Configuration
+	条件注解，判断是否具有上一级依赖jar等情况，否则此项自动配置不起作用
+	@ConditionalOnClass({SqlSessionFactory.class, SqlSessionFactoryBean.class})
+	@ConditionalOnSingalCandidate(DataSource.class)
+	绑定Bean，配置类，配置mybatis自己的参数，此类具有 @ConfigurationProperties(prefix = "mybatis")
+	也就意味着只需要在application.yml中编写 mybatis.xxx即可配置相应参数
+	@EnableConfigurationProperties({MybatisProperties.class})
+	@AutoConfigureAfter({DataSourceAutoConfiguration.class, MybatisLanguageDriverAutoConfiguration.class})
+	public class MybatisAutoConfiguration implemetns InitializingBean{
+
+		举例
+		@Bean
+		@ConditionalOnMissingBean
+		public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception{
+			使用数据源创建sqlSessionFactoryBean对象
+		}
+
+		创建SqlSession等等（创建代理）
+	
+	}
+
+
+***************************************************************************************************
+访问数据库
+SpringBoot提供的JdbcTemplate
+	可以直接访问JDBC
+
+SpringBoot提供 orm object relational mapping 对象映射技术 支持三方框架例如MyBatis Hibernate
+
+Spring Data 独立提供多种关系型数据库以及非关系型数据库的访问支持，
+	例如MySQL，Oracle，MongoDB，Redis，R2DBC，Apache Sola，Elasticsearch
+
+SpringBoot也支持嵌入式数据库例如H2，HSQL等，只需要提供jar包，就可以在内存中维护数据
+
+数据源DataSource
+	规范：实现接口  javax.sql.DataSource
+	表示从某个ip上的数据库可以获取数据，接口提供了规范的表顺的方法发获取 与数据库绑定的链接对象即Collection对象
+
+javax.sql.Collection 是抽象的
+	通过Collection对象将sql语句发送给数据库，同时从Connection对象也可以获取命令的执行结果
+	是Java程序和数据库的链接通道
+
+对于SpringBoot的配置
+DataSource在 application配置文件中，以前缀
+	spring.datasource.*作为配置项
+		常见的有.url  .username  .passworc
+	
+Spring Boot支持多种数据库连接池，优先默认使用HikariCP，其次是Tomcat pooling，
+	再次是Commons DBCP2,如果以上都没有，最后会使用Oracle UCP连接池。
+	当项目中 starter依赖了spring-boot-starter-jdbc或者spring-boot-starter-jdbc-jpa就默认添加HikariCP连接池依赖
+
+
+ctrl + alt + l 格式化文本
+
+原生的轻量的JdbcTemplate模板类
+	配置前缀 
+	spring.jdbc.
+	例如配置查询超时时间
+	spring.jdbc.template.query-timeout = 10
+
+	DDL语句脚本 schema.sql  建表语句
+	DML语句脚本 data.sql    增删改
+	常用配置
+	spring.datasource.driver-class-name=
+	spring.datasource.url=
+	spring.datasource.username=
+	spring.datasource.password=
+
+	spring.sql.init.mode=never
+
+使用JdbcTemplate模板类，其提供了常用方法：
+	execute
+	update batchUpdate
+	query 
+	queryForObject() 只能查1条
+	queryForList<Map<String, Object>>() 可以查 0，1，多条；一个List对应一条记录，Map对应的是字段和值，
+		查询常用，多种重载形式，根据不同条件对应使用参数列表，
+	call
+	也有支持流处理stream的方法
+
+使用（测试程序）
+	注入JdbcTemplate模板类对象
+	指定sql语句，
+	调用方法执行sql，并分析处理返回结果
+	返回结果集需要封装到对象的话需要使用 new BeanPropertyRowMapper<>(xxxxx.class) 来创建并封装
+		这是一个实现了RowMapper接口的实现类，用来处理结果集映射关系，将其封装为java对象
+		在返回复杂的结果时，通常要自定义RowMapper来接收特定的返回结果。
+		也可以使用lambda便捷实现
+
+使用NamedParameterJdbcTemplate对象可以接收命名的参数
+	即相较于JdbcTemplate的 参数索引 方式，更加具有可读性。
+	底层包裹了JdbcTemplate ，对命名参数进行了一次解析，增加了可读性
+		this.classicJdbcTemplate = new JdbcTemplate(dataSource);
+	
+	举例：sql语句中 :num     :uid   使用 冒号: 完成类似占位符的功能
+	赋值：准备 
+		  Map<String, Object> param = new HashMap<>(16);接收
+		  param.put("num", 2000);
+		  param.put("uid", 102030);
+	执行：Long count = namedParamterJdbcTemplate.queryForObject(sql, param, Long.class);
+
+
+多表查询（无论什么方法，多表联查都是要理清逻辑关系，结果一定也是对象形式）
+	表a对应的实体类A
+	表b对应的实体类B
+	表a b联查，这个链接join关系，通常是类A中具有类B的属性字段例如 private B b;
+		查询结果通常也需要映射到一个自定义的实体类 C 中
+		返回结果如果用lambda表达式书写则如下
+		List<A> aList = namedParameterJdbcTemplate.query(sql,param,(rs,num)->{
+			内部类定义属性接收a查询结果
+			var id = rs.getInt("id");
+			..a..
+
+			定义b对象接收b链接查询的结果
+			var ...
+			B b = new B(...);
+
+			返回连接查询的结果的封装对象
+			return new C(..a.., b);
+		})
+
+		遍历List输出结果
+		aList.forEach(m -> {
+			m.detail.soutv;
+		});
+
+代码繁琐，但是对于数据可以细粒度高灵活的的处理
+
+***************************************************************************************************
+MyBatis在SpringBoot的配置及使用
+	MyBatis和MyBatis-Plus都是十分常用的
+脚手架添加依赖
+	MyBatis Framework
+	MySQL Driver
+
+	starter maven会自动引入jdbc HikariCP连接池 tx事务 自动配置autoconfigure 等必须依赖
+
+	在SpringBootApplication上添加包扫描路径的注解
+
+	查找的列名 field 需要与实体类的属性名一一对应。
+	可以在配置中开启驼峰命名映射
+	具体的可以在xml中或注解形式配置映射列表
+
+配置文件
+#数据库链接
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://127.0.0.1:3306/blog?serverTimezone=Asia/Shanghai&useUnicode=true
+spring.datasource.username=root
+spring.datasource.password=Lbw151290007
+
+#mybatis配置
+mybatis.configuration.map-underscore-to-camel-case=true
+mybatis.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
+mybatis.mapper-locations=classpath:/mapper/**/*.xml
+
+
+单表CRUD复习，全注解形式
+插件 MyBatisX 用来检测sql语句和mapper和dao之间的对应
+	
+    @Select("""
+            select id,user_id,title,summary,read_count,create_time,update_time
+            from article where id = #{articleId}
+            """)
+    @Results(id = "BaseArticleMap", value = {
+            @Result(id = true, column = "id", property = "id"),
+            @Result(column = "user_id", property = "userId"),
+            @Result(column = "title", property = "title"),
+            @Result(column = "summary", property = "summary"),
+            @Result(column = "read_count", property = "readCount"),
+            @Result(column = "create_time", property = "createTime"),
+            @Result(column = "update_time", property = "updateTime")
+    })
+    Article selectById(@Param("articleId") Integer id);
+
+
+    @Insert("""
+            insert into article(id,user_id,title,summary,read_count,create_time,update_time)
+            values(#{id}, #{userId}, #{title}, #{summary}, #{readCount}, #{createTime}, #{updateTime})
+            """)
+    int insertArticle(Article article);
+
+
+    @Update("""
+            update article set read_count = #{readCount} where id = #{id}
+            """)
+    int updateReadCount(Integer id, Integer readCount);
+
+
+    @Delete("""
+            delete from article where id = #{id}
+            """)
+    int deleteArticle(Integer id);
+
+
+复习结果映射ResultMap
+	结果映射是将查询结果中的列和实体Bean的属性之间的对应关系描述
+	xml文件中可以使用<resultMap >标签中定义
+		在其他select标签中可以指定 resultMap=""
+	注解形式：
+		定义映射关系： @Results(id = "xxx", value = { @Result(),...})
+		复用： @ResultMap 来复用之前定义好的结果映射，填写对用id = "xxx"即可
+		也可以引用在xml文件中定义的resultMap
+		根据项目实际情况配合使用
+
+
+SQL提供者功能，MyBatis
+配合注解： @SelectProvider  @InsertProvider  @UpdateProvider  @DeleteProvider
+
+定义：创建提供者类，类中声明静态方法，方法体是SQL语句并返回SQL
+使用：在Mapper/Dao的接口上使用注解
+		@SelectProvider(type = 提供者类.class, method="方法名称" )
+		方法...
+作用：分离sql语·	句，便于维护。
+
+注：sql提供者可以分离sql语句。resultMap依旧需要引用已经定义的。可以在注解中，也可以在xml中。
+提供者类可以分离sql，需要根据项目实际需求，对于不同的查询，增删改语句等进行不同的封装以提高效率。
+
+
+***************************************************************************************************
+MyBatis在SpringBoot的配置及使用
+一对一以及一对多关系的分步查询
+
+一对一映射关系。
+
+新增一个pojo类，原有Article类中需要添加新pojo类的属性，原有resultMap均需要添加字段映射。表需要增加字段与新表
+需要添加外键描述关系，查询语句需要更改
+
+在MySQL中需要建立外键（自动添加并维护索引）表示表之间的关系，
+	这个外键也需要在pojo中表明，一个类中有另一个类的属性、
+	同时在链接查询时，resultMap中也需要指定链接查询的结果映射
+
+关键：一对一，是一个字段的结果对应一个实体类的结果
+要输出，则是 类（属性，属性，属性，类（属性，属性））
+分布查询的懒加载即为只有查询访问到对应字段时，才会触发数据库查询并加载对应信息
+
+普通的property是对应字段的结果
+分步链接查询的property是对应实体类的结果，column即为传递过去的链接条件，通常都会添加外键约束索引
+
+使用注解编写resultMap 使用注解 @One
+    @Select("""
+            select id,user_id,title,summary,read_count,create_time,update_time
+            from article where id = #{id}
+            """)
+    @Results(id = "ArticleAndDetailMap2", value = {
+            @Result(id = true, column = "id", property = "id"),
+            @Result(column = "user_id", property = "userId"),
+            @Result(column = "title", property = "title"),
+            @Result(column = "summary", property = "summary"),
+            @Result(column = "read_count", property = "readCount"),
+            @Result(column = "create_time", property = "createTime"),
+            @Result(column = "update_time", property = "updateTime"),
+            @Result(column = "id", property = "articleDetail",
+                    one = @One(select = "com.leowork.onemybatis.mapper.ArticleDetailDao.selectDetail",
+                            fetchType = FetchType.LAZY))
+    })
+    Article selectAllArticleAndDetail2(Integer id);
+
+
+使用xml文件编写resultMap标签 一对一使用association
+    <resultMap id="ArticleAndDetailMap" type="com.leowork.onemybatis.pojo.Article">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="title" property="title"/>
+        <result column="read_count" property="readCount"/>
+        <result column="summary" property="summary"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <association column="id"
+                     property="articleDetail"
+                     javaType="com.leowork.onemybatis.pojo.ArticleDetail"
+                     select="com.leowork.onemybatis.mapper.ArticleDetailDao.selectDetail"
+                     fetchType="lazy"/>
+    </resultMap>
+
+
+注意：分步查询需要提供另一个字段的 select="" 属性，表明字段的来源即为下一步的操作。
+			提供column属性表示链接的条件，property即为链接的对应实体类
+MyBaits是支持注解开发与xml混用的。resultMap可以使用id复用。
+	select语句也可以取自xml中对应的语句id，也可以是编写了sql注解的对应mapper方法的全限定名称
+	因为select语句的id本身就必须和对应方法的方法名对应，且通过namespace达到项目唯一性。
+不过项目中因实际情况决定是否混用以造成不必要的可读性影响。
+
+**************
+一对多映射关系
+
+一篇文章拥有多条评论 Comment 
+
+使用注解编写resultMap 使用注解 @Many
+    @Select("""
+            select id,user_id,title,summary,read_count,create_time,update_time
+            from article where id = #{id}
+            """)
+    @Results(id = "articleAndCommentMap2", value = {
+            @Result(id = true, column = "id", property = "id"),
+            @Result(column = "user_id", property = "userId"),
+            @Result(column = "title", property = "title"),
+            @Result(column = "summary", property = "summary"),
+            @Result(column = "read_count", property = "readCount"),
+            @Result(column = "create_time", property = "createTime"),
+            @Result(column = "update_time", property = "updateTime"),
+            @Result(column = "id", property = "comments",
+                    many = @Many(select = "com.leowork.onemybatis.mapper.CommentDao.selectByArticleId",
+                            fetchType = FetchType.LAZY))
+    })
+    Article selectArticleAndComments2(Integer id);
+
+使用xml文件编写resultMap标签 使用collection
+    <resultMap id="articleAndCommentMap" type="com.leowork.onemybatis.pojo.Article">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="title" property="title"/>
+        <result column="read_count" property="readCount"/>
+        <result column="summary" property="summary"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <collection column="id"
+                    property="comments"
+                    ofType="com.leowork.onemybatis.pojo.Comment"
+                    select="com.leowork.onemybatis.mapper.CommentDao.selectByArticleId"
+                    fetchType="lazy"/>
+    </resultMap>
+依旧需要提供 column与property 区别是复数的目标实体类需要使用 ofType=“”属性
+
+
+***************************************************************************************************
+MyBatis的常用设置和自动配置
+自动配置类
+MyBatisAutoConfiguration.class   implements InitializingBean
+
+主要用来创建SqlSessionFactory
+就可以生产SqlSession
+其中的模板类 SqlSessionTemplate 用于执行sql语句
+
+另一个比较重要的类 MapperFactoryBean 用来生成dao mapper接口的代理类
+
+
+全部配置可以参考官网
+常用配置：
+#开启驼峰命名映射
+mybatis.configuration.map-underscore-to-camel-case=true
+#开启日志
+mybatis.configuration.log-impl=org.apache.ibatis.logging.stdout.StdOutImpl
+#配置mapper.xml文件路径
+mybatis.mapper-locations=classpath:/mapper/**/*.xml
+#开启缓存
+mybatis.configuration.cache-enabled=true
+#延迟加载
+mybatis.configuration.lazy-loading-enabled=true
+#mybatis主配置文件xml路径配置，通常不使用
+mybatis.config-loaction=classpath:/mybatis-config.xml
+
+如果不希望在springboot的appliction主配置文件下进行配置，也可以创建单独的配置文件。
+在类路径下新建例如 mybatis-config.xml
+使用xml文件形式进行配置，引入dtd文件约束，编写配置标签<settings>
+
+通常不会使用，因为mybatis集成spring框架。包扫描路径，事务，数据源等均交由spring框架管理与配置。
+
+
+************
+连接池配置
+
+springboot默认集成mybatis使用的连接池是HikariCP
+#默认连接池，其他的例如Tomcat，DBCP，Duriud，C3P0等等
+spring.datasource.type=com.zaxxer.hikari.HikariDataSource
+
+application.yml示例：
+spring:
+	datasource:
+		type:com.zaxxer.hikari.HikariDataSource
+		driver-class-name:com.mysql.cj.jdbc.Driver
+		url:jdbc:mysql://127.0.0.1:3306/blog?serverTimezone=Asia/Shanghai&useUnicode=true
+		username:
+		password:
+		hikari:
+			auto-commit: true
+			#推荐链接数 connections = ((cpu核心数 * 2) + 磁盘数量) 近似值 取自Oracle官网上文章结论
+			maximum-pool-size: 10
+			#最小连接数，不建议设置，默认与上述相同
+			minimum-idle：10
+			#获取连接时，检测语句
+			connection-test-query: select 1
+			#连接超时时间，默认30秒，单位是毫秒
+			#用来控制客户端在获取链接的连接池Connection的等待时间
+			#如果超时未获取到连接对象，则抛出SQLException异常
+			connection-timeout: 20000
+			#其他 连接池单独的属性 参考对应官网api配置
+			data-source-properties:
+				#配置缓存与预编译语句
+				cachePrepStmts: true
+				dataSource.cachePrepStmtst: true
+				dataSource.prepStmtCacheSize: 250
+				dataSource.prepStmtCacheSqlLimit: 2048
+				dataSource.useServerPrepStmts: true
+
+***************************************************************************************************
+SpringBoot中集成MyBatis的事务控制
+
+事务分为全局事务与本地事务，本地事务特定于资源。但是不能跨越多个事务资源工作，
+	例如在一个方法中处理连接多个数据库的事务，本地事务会无效。
+
+Spring框架解决了全局事务和本地事务的缺点。提供了专门的事务管理器TransactionManager。
+	通过AOP面向切面编程思想，将事务控制增强代码运用在项目中。
+	Spring框架提供声明式和编程式事务管理。
+接口：org.springframework.transaction.PlatformTransactionManager 定义了事务的策略
+
+事务控制的属性:
+	Propagation: 传播行为
+	Isolation: 隔离级别
+	Timeout: 超时时间
+	Read-only: 只读状态
+
+声明式事务的使用：
+	基于XML配置文件
+	基于注解驱动 @Transactional
+		只建议使用该注解注释具体类以及具体类的方法，不可以注释接口以及抽象。
+		公共方法 public修饰的使用 @Transactional注解修饰是可以的。
+		但如果是修饰了 受保护的，私有的或者仅包可见的方法，虽然不会报错，但是事务无法生效。
+
+复习：Java中定义了DataSource接口，Connection接口 规范，任何数据源都需要遵循这套规范
+	只有Connection接口中定义了commit rollback close等方法，其他都是其实现，底层调用JDBC驱动等实现
+	想要操作数据库，就必须持有连接对象
+
+一个数据源 DataSource 可以获取多个 connection 对象。数据源通常是连接池的实现，
+	它管理着一组数据库连接，并能够根据需要分配和回收这些连接对象。
+
+在传统的数据库连接中，一个 Connection 对象通常只能连接一个数据库，而且这个连接是固定的。
+	然而，在某些特定的情况下，一些数据库驱动程序可能提供了一些特殊的功能来支持连接多个数据库，
+	例如 MySQL 的多数据库查询、PostgreSQL 的数据库链接复用，比如一些 NoSQL 数据库或者
+	特殊的数据库集群环境可能会有类似的功能。
+	在具体情况下，可以根据特定的数据库和驱动程序的文档来了解是否支持在同一个 Connection 中连接多个数据源。
+
+在 MyBatis 中，一个 Connection 对象通常代表着与单个数据库的连接，
+	因此在同一个 Connection 对象中连接多个数据源是不太常见的。
+	通常情况下，如果需要连接多个数据源，可以通过分别配置多个 SqlSessionFactory 对象，
+	每个 SqlSessionFactory 针对一个数据源，然后在代码中分别使用
+	不同的 SqlSessionFactory.openSession()  来获取sqlSession 来执行操作。
+
+虽然 SqlSession 对象在使用过程中会持有数据库连接，但是它本身并不直接包含连接对象，
+	而是通过内部的方式管理和操作连接。
+	每次通过 SqlSessionFactory.openSession() 方法获取 SqlSession 对象时，都会获得一个新的连接，
+	而这个连接会在 SqlSession 关闭时被释放或返回连接池。
+	如果需要直接操作底层的数据库连接对象，通常需要通过 SqlSession 对象来进行，比如通过 getConnection() 方法
+	获取当前的数据库连接对象。这样可以在一定程度上操作连接对象，
+	但需要注意谨慎使用，以避免破坏 MyBatis 的事务管理机制。
+
+在 Spring 中，事务管理器（TransactionManager）通常并不直接管理连接对象和 SqlSession 会话之间的绑定关系。
+	事务管理器主要负责事务的提交、回滚和事务的控制，
+	而连接对象和 SqlSession 会话之间的绑定关系通常是由 MyBatis 来管理的。
+	在 Spring 集成 MyBatis 的环境下，一般是通过 Spring 提供的 DataSourceTransactionManager 或
+	JpaTransactionManager 来管理事务。
+	这些事务管理器会将事务的管理委托给底层的数据访问框架，比如 MyBatis。
+	在 MyBatis 中，SqlSession 会话对象与连接对象的管理通常是由 MyBatis 自身来处理的。
+	在每次通过 SqlSessionFactory 获取 SqlSession 对象时，MyBatis 会从数据源获取一个新的数据库连接，
+	并将这个连接绑定到当前的 SqlSession 对象上。
+	这样在一个 SqlSession 的生命周期内，它会持有一个数据库连接，
+	并负责管理这个连接的打开、提交、回滚和关闭等操作。
+
+注意，在一个事务周期中，通常只会开启并存在一个SqlSession会话对象。以免其持有的连接对象不同导致不一致
+如果必须要在一个事务中使用多个 SqlSession 对象，一般需要确保这些 Session 对象使用同一个数据库连接。
+	在 MyBatis 中，可以通过 SqlSessionFactory 的 openSession(Connection connection) 方法来创建一个
+	新的 SqlSession 对象，并指定这个对象使用的数据库连接。
+	在这种情况下，所有的 SqlSession 对象都可以操作同一个数据库连接，从而保证事务的一致性。
+
+在 MyBatis 中，连接对象与 SqlSession 之间的绑定关系是通过 ThreadLocal 来实现的。
+	ThreadLocal 是 Java 提供的一个线程局部变量工具，它可以让每个线程都有自己独立的变量副本，互不干扰。
+	MyBatis 使用 ThreadLocal 来在每个线程中保存当前线程的 SqlSession 对象。
+	当应用程序需要执行数据库操作时，MyBatis 会从当前线程的 ThreadLocal 中获取对应的 SqlSession 对象，
+	从而获得数据库连接并执行相应的数据库操作。
+
+
+声明式事务
+
+连接池配置 xml
+spring.datasource.hikari.auto-commit=true
+spring.datasource.hikari.maximum-pool-size=16
+spring.datasource.hikari.connection-test-query=select 1
+
+
+Spring框架推荐使用声明式 注解方式控制事务
+	注解可以添加在方法上，也可以添加在类上（不推荐）
+	属性：
+			Propagation: 传播行为  Propagation propagation() default Propagation.REQUIRED;
+			Isolation: 隔离级别 Isolation isolation() default Isolation.DEFAULT; -1 1 2 4 8 
+			Timeout: 超时时间 int timeout() default -1;
+			Read-only: 只读状态 boolean readOnly() default false;
+			rollbackFor: 遇到哪些异常时需要回滚
+
+@Transactional(rollbackFor = {Exception.class})
+
+
+启用声明式事务注解控制
+	在SpringBoot的启动器上添加注解(可选)
+	@EnableTransactionManagement
+
+
+***************************************************************************************************
+Spring事务的无效
+	Spring事务的实现是基于AOP的环绕通知，只有通过代理对象调用具有事务的增强方法生效。
+	默认情况下，protected private修饰的方法是没有事务功能的
+
+	如果使用未受事务管理的A方法，调用收到事务管理的B方法，B方法的事务不会生效，不会被管理。
+
+	注入的service实现类是由Spring生成的代理类，默认是CGLIB代理
+
+另一种事务无效的情况，
+	就是方法是在线程中运行，在同一线程中的方法可以被事务管理。如果加入一个新的线程来执行业务则无法纳入事务管理。
+
+	错误情况就是在 @Transactional()修饰的方法中，使用了当前线程currentThread() 之外的线程来执行业务逻辑
+	事务只会管理当前线程，开启新的线程 例如 new Thread() 则新线程中执行的方法不受事务管理。
+
+可以使用箭头表达式快捷实现创建新线程（简化了内部类的写法 省去了run start方法等）
+
+Thread thread = new Thread(() -> {
+
+	执行业务逻辑代码
+	
+});
+
+***************************************************************************************************
+事务回滚规则
+rollbackFor  norollbackFor  指定xxx.class
+ 
+rollbackForClassName  norollbackForClassName  指定全限定类名
+
+RuntimeException 的实例或子类时 回滚
+Error 回滚
+已检查异常不会回滚，默认会提交事务
+
+
+
+***************************************************************************************************
+SpringMVC
+
+主要用于基于浏览器的 B/S 架构应用
+可以嵌入Tomcat Jetty Netty等小型服务器
+
+SpringBoot可以创建基于Servlet体系的Spring Web MVC应用
+也可以创建 使用 spring-boot-starter-webflux 模块（另一种体系 与servlet无关）构建响应式非阻塞的Web应用程序
+
+新建模块
+	引入依赖
+	Spirng web 启动器 内置了Tomcat服务器，内置依赖Spring SpringMVC Restful等
+		web starter 中包含 json tomcat web webmvc的starter
+		tomcat版本为10.1.19  采用jakarta servlet6规范 嵌入式是指以jar包的方式加入项目，服务器的进程运行在
+			同一进程中
+	Thymeleaf 视图技术
+
+
+创建Controller
+	@Controller注解
+	功能：接收前端发送过来的请求，并相应结果给浏览器
+
+	控制器方法接收请求
+	@RequestMapping("url")
+
+	视图使用Thymeleaf，文件位于 /resources/templates
+		文件为html文件
+		th:text：设置元素的文本内容。
+		th:utext：设置元素的HTML文本内容，不进行转义。
+		th:object：设置表单对象。
+		th:field：用于绑定表单字段。
+		th:errors：显示表单字段的错误信息
+		th:attr：设置HTML元素的属性。
+		th:value、th:href、th:src：设置元素的值、链接、图片地址等属性。
+		th:if、th:unless：条件判断语句。
+		th:switch、th:case、th:break：类似于Java中的switch-case语句
+
+步骤：编写请求页面---编写Controller---编写视图页面
+
+Controller可以返回视图html页面名，（就是返回html页面字符串）
+	也可以返回json数据，用来交给前端页面渲染
+
+SpringMVC框架支持控制器方法返回对象，再由jackson转化为json格式对象（Jackson工具库中的ObjectMapper对象）
+添加注解 @ResponseBody
+
+接受请求的注解
+	@GetMapping   用于接受get请求，简化的 @RequestMapping(method=RequestMethod.GET)注解
+	@PostMapping  用于接受post请求
+	@PutMapping			put
+	@DeleteMapping		delete
+	...
+
+json应答数据多用于前后端分离
+
+注意从Spring6SpringBoot3开始 javax包名改为jakarta包名
+
+
+***************************************************************************************************
+
+Vue.js是一款流行的JavaScript框架，用于构建交互式的用户界面。以下是Vue.js中常用的一些语法：
+
+  1. 插值和表达式：
+  {{ expression }} ：用于在模板中插入变量或表达式的值。
+  v-bind ：用于动态绑定HTML属性。
+  v-on ：用于绑定事件监听器。
+
+  2. 条件和循环：
+  v-if 、 v-else 、 v-else-if ：条件渲染。
+  v-for ：循环渲染列表数据。
+
+  3. 组件：
+  Vue.component ：定义全局组件。
+  props ：父子组件之间传递数据。
+  emit ：子组件向父组件传递事件。
+
+  4. 计算属性和侦听器：
+  computed ：计算属性，根据依赖动态计算值。
+  watch ：侦听器，监听数据变化执行相应操作。
+
+  5. 生命周期钩子：
+  created 、 mounted 、 updated 、 destroyed 等生命周期钩子函数。
+
+  6. 双向数据绑定：
+  v-model ：实现表单元素和数据的双向绑定。
+
+  7. 过滤器：
+  filters ：用于数据的格式化处理。
+
+  8. 模板语法：
+  v-html ：渲染HTML。
+  v-text ：渲染纯文本。
+  v-show 、 v-hide ：根据条件显示或隐藏元素。
+
+  9. 异步请求：
+  axios 、 fetch 等库用于发送异步请求。
+
+  10. 路由：
+  vue-router ：用于构建SPA应用的路由管理。
+
+  11. 状态管理：
+  Vuex ：用于管理应用中的状态。
+
+  12. 动画：
+  transition 、 transition-group ：用于添加动画效果。
+
+  13. 模板引用：
+  ref ：引用DOM元素或子组件。
+
+Vue.js具有丰富的语法和功能，支持响应式数据绑定、组件化开发、虚拟DOM等特性，
+使得开发者能够高效地构建现代化的Web应用程序。以上列举的是Vue.js中常用的一些语法，
+有助于开发者更好地利用Vue.js构建交互式的用户界面。
+
+***************************************************************************************************
+
+https区别于http就是添加了secure  SSL安全证书，通常由域名提供网站来提供服务，注册者需要额外购买服务，
+注册安全证书，通常也需要营业执照，实名信息等。合法经营
+
+
+***************************************************************************************************
+给网站添加logo图标  favicon
+
+在html文件的 <head>标签中加入，尺寸通常为32x32像素，格式为 ico
+
+<link rel="icon" href="资源目录" type="image/x-icon">
+
+浏览器均具有缓存机制，静态资源先走缓存，可以重新加载或强制刷新Ctrl+F5
+
+***************************************************************************************************
+SpringMVC 底层是Servlet，遵循Servlet规范，专注于web应用，可以使用Spring强大的IoC，Aop功能
+同时Servlet的Listener，Filter均得到了增强，职责分离，便于开发与测试。
+
+控制器Controller，是一个普通Bean，使用注解 @Controller或者 @RestController， 是 @Component注解的别名
+
+一般同一类业务，相关的业务，使用同一个控制器（类）
+
+@Controller 
+	@RestController 包含了 @Controller的功能，并添加了 @ResponseBody注解，表示当前控制器类中所有方法均通过respose返回json
+
+Controller类中的方法，也叫控制器方法。用来处理对应uri的请求。并可以接收uri后附带的参数
+
+SpringMVC支持多种策略来匹配 解析请求路径uri和控制器方法
+	AntPathMatcher    PathPatternParser（推荐，吞吐量更大）
+
+**即配置 spring.mvc.pathmatch.matching-strategy = path_pattern_parser
+
+匹配规则：
+	可以使用通配符 ？ *  **  支持正则表达式
+	？ 匹配一个字符
+	*  匹配0个或多个字符，在同一个路径段中匹配字符，不可以跨越 / 
+	** 匹配0个或多个字符或路径段，相当于所有
+
+测试请求的工具可以使用浏览器，PostMan、ApiFox、Idea自带的HttpClient（点击对应的 @图标 open in HttpClient即可）
+
+可以使用 { } 形式，匹配路径并赋给自定义路径名称，使用 @PathVariable注解获取
+@RequestMapping(value = "/user/{userId}", method = RequestMethod.GET)
+@ResponseBody
+public String getUserById(@PathVariable("userId") Long userId) {
+    // 根据userId查询用户信息
+    return "User ID: " + userId;
+}
+
+{ } 中也可以使用正则表达式进行匹配
+举例：
+	/user/*.txt
+	/order/{*id}
+	/pages/{fname:\\w+}.log
+
+
+通常状态下，请求与对应的方法是需要一一对应的，路径唯一
+同一个方法上也可以写多个url
+
+讲解 @RequestMapping注解
+属性：
+	value 别名path 数组，故可以省略
+	mathod 请求方式
+		SpringBoot3后 HttpMethod变成了类 之前是enum枚举
+		public final class HttpMethod implements Compareable<HttpMethod>, Serializable{
+			public static final HttpMethod GET = new HttpMethod("GET");
+			...
+
+		}
+
+***************************************************************************************************
+SpringMVC提供（封装）的控制器方法的参数种类以及返回值类型
+
+框架检测到方法的形参列表中有参数的声明，就会自动获取并注入
+
+主要参数：
+	ServletRequest
+	ServletResponse
+	HttpSession
+	HttpMethod
+	InputStream     读取request body
+	Reader			读取request body
+	OutPutStream	访问response body
+	Writer			访问response body
+	Model
+	ModelMap
+	@RequestParam
+	@RequestHeader
+	@RequestBody
+	@RequestPart
+	@CookieValue
+	...
+	uri中的参数名对应可以接收
+
+
+返回值类型：
+	@ResponseBody   序列化输出为json格式
+	String
+	void
+	自定义对象		一般会序列化为json字符串
+	ModelAndView
+	ErrorResponse	处理错误信息用，返回封装的错误对象
+
+
+控制器方法接收请求中的参数
+	请求参数名与形参名一一对应，简单类型即可接收，例如String，Integer等
+	将多个参数封装为一个对象，请求的多个参数名与对象的属性名一一对应。
+	@RequestPararm	接收form表单提交的参数并解析到方法参数，解析multipart文件上传等
+	@RequestBody	请求体，通常接收json格式参数
+	HttpServletRequest  请求域，request.getParameter()
+	@RequestHeader  解析请求头中的参数
+
+SpringMVC框架中提供了专门的接口用来解析参数， HandlerMethodArgumentResolver
+	处理器方法参数解析器，专门用来解析请求得到Controller方法的参数的值
+
+接收参数：
+	前端发过来的参数均为String类型
+
+举例：
+****一一对应：适用于数量较少，类型是简单类型的情况，框架会尝试将url中的String类型转化为形参列表中的类型
+		无法转换则报错
+	请求url：http://localhost:8080/p1?name=lisi&age=20&sex=m
+	public String p1(String name, Integer age, String sex){}
+
+
+****使用对象封装接收，提供setget方法，名称要对应。
+	属性字段：
+	private String name;
+	private Integer age;
+	private String sex;
+	请求url：http://localhost:8080/p2?name=lisi&age=20&sex=m
+	public String p2(User user){
+		user.getName();
+		。。。
+	}
+
+
+****使用原生Servlet的HttpServletRequest对象接收
+	request.getAttribute("");
+
+
+****使用 @RequestParam接收,required表示是否必须。true但未接收到则报错
+	public String p4(@RequestParam(value = "name", required = true)String name,
+					 @RequestParam(value = "age", required = false, defaultValue = 20)Integer age){
+		...
+	}
+
+
+****使用 @RequestHeader接收请求头中的参数
+	public String p5(@RequestHeader("Accept")String accept){
+		...
+	}
+
+
+****使用 @ResponseBody接收请求体中数据，现在基本上都是json格式数据，框架会将json解析，注入到形参对象的属性值中
+	注意json的key需要和形参对象的属性名一一对应
+	{"username":"lisi","age":"30"}
+
+
+****使用IO的 Reader或InputStream读取请求体的数据，适合post请求体的各类数据，
+	相比框架自动解析属于手动读取的方式
+	public String p7(Reader in){
+		StringBuffer content = new StringBuffer("");
+		//IO流必须try catch
+		try(BufferedReader bin = new BufferedReader(reader)){
+			String line = "";
+			while((line = bin.readLine()) <> null){
+				content.append(line);
+			}
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+		
+		Syetem.out.println("reader = " + content);
+		return content;
+
+	}
+
+
+****使用数组接收前端发送的多个值，可以用于简单批量操作
+	请求url: http://localhost:8080/p8?name=lisi&name=zhangsan&name=wangwu
+	@GetMapping("uri")
+	public String getMultiVal(String[] name){
+		
+		List<String> nameList = Array.stream(name).toList();
+
+		return nameList.toString();
+	}
+
+
+***************************************************************************************************
+参数的验证
+
+后端对于接收到的参数需要进行过滤校验和拦截，以便业务方法处理。
+	非空，数据长度，类型，正则，布尔等判断（前端提交前通常也会进行验证）
+	选择对应的功能
+	对于不符合要求的数据拒绝访问功能并需要返回错误信息等
+
+对于这种交叉业务（每个Controller方法都需要验证，代码重复）可以使用自定义AoP完成（更加符合业务需求）
+
+Java Bean Validation JSR303 规范验证，是J2EE种的一项子规范
+
+Bean Validation 是运行时数据验证规范，给JavaBean验证定义了相应的元数据模型和API
+
+实现： hibernate-validator
+并不是数据库框架，仅是一个数据约束的实现
+
+SpringBoot使用Java Bean Validation验证域模型属性值是否符合预期，验证失败立即返回错误信息。
+	Java Bean Validation将验证规则从controller service集中到Bean对象，一个地方控制所有的验证（全局）
+
+
+
+注解：
+	@Null							被注释的元素必须为空
+	@NotNull						被注释的元素必须不为空
+	@AssertTrue						被注释的元素必须为true
+	@AssertFalse					被注释的元素必须为false
+	@Min(value)						被注释的元素必须是一个数字，其值必须大于等于指定的最小值
+	@Max(value)						被注释的元素必须是一个数字，其值必须小于等于指定的最小值
+	@DecimalMin(value)				被注释的元素必须是一个小数数字，其值必须大于等于指定的最小值
+	@DecimalMax(value)				被注释的元素必须是一个小数数字，其值必须小于等于指定的最小值
+	@Size(max, min)					被注释的元素的大小(字符)必须在指定的范围内
+	@Digits(integer, fraction)		被注释的元素必须是一个数字，其值必须在可接受的范围内
+	@Past							被注释的元素必须是一个过去的日期
+	@Future							被注释的元素必须是一个将来的日期
+**  @Pattern(value)					被注释的元素必须符合指定的正则表达式
+	@Email							被注释的元素必须是电子邮箱地址
+	@NotEmpty						被注释的字符串必须非空
+
+使用：
+	添加Bean Validator Starter到dependency中
+	<groupId>org.springframework.boot
+	<artifactId>spring-boot-starter-validation
+
+	在Bean对象上，添加JSR-303注解，实现自定义验证规则。
+	包名package jakarta.validation.constraints;
+
+举例：
+    @NotNull(message = "密码不能为空")
+	@NotBlank(message = "密码不能为空")
+    @Size(min = 1, max = 16, message = "长度必须在16位以内") // Size注解会认为null是有效值
+    private String password;
+
+	然后在控制器方法的形参上添加 @Validated注解，表示该参数需要经过验证。
+	并需要添加 绑定结果 BindingResult参数。用来获取验证结果
+	@ResponseBody
+	public User getUserJson(@Validated User user2, BindingResult br){
+        
+		
+		Map<String, Object> map = new HashMap<>(16);
+        if (br.hasErrors()){
+            List<FieldError> fieldErrors = br.getFieldErrors();
+            fieldErrors.forEach(field -> {
+                map.put(field.getField(), field.getDefaultMessage());
+            });
+        }
+
+
+	}
+
+测试：使用自带 HttpClient
+	POST http://localhost:8080/article/user
+	Content-Type: application/json
+
+	{
+	  "username": "test_4bb1c734110b",
+	  "password": "test_8556a7183eb7"
+	}
+	
+支持自定义验证要求与自定义注解。
+
+
+支持分组验证
+	在创建文章时，id为空，由服务器端程序生成并赋值绑定。
+	在修改文章时，id不能为空，需要传入id来识别对应的文章。
+	就是在不同场景下，对于同一个属性值有不同的要求
+
+	定义组：
+	通常使用对应的接口名作为组名，可以在类中直接建组，只需定义接口名
+
+使用：
+	public static interface AddArticle{};
+	public static interface EditArticle{};
+
+	@NotNull(message = "不能为空"，
+			groups = {EditArticle.class})
+	@Min(value = 1，message = "id大于0"，
+			groups = {EditArticle.class})
+	@Null(message = "必须为空"，
+			groups = {AddArticle.class})
+	private Integer id;
+
+分组验证：
+	public User getUserJson(@Validated(AddArticle.class) User user2, BindingResult br){}
+
+验证的自动配置类是：
+	ValidationAutoConfiguration
+	内部创建了对应的工厂Bean，并注入相应属性
+
+
+***************************************************************************************************
+视图View
+	主要返回JSON数据
+	其他的也有：
+		页面视图，Thymeleaf代替jsp，一种用java写html的翻译方式
+		复杂JSON，进行嵌套得到
+		Map，自动转换json
+		自定义状态码(HttpStatus Code) ResponseEntity
+		等等
+		
+返回JSON数据，交由前端框架Vue React等渲染
+现在基本是AJAX异步请求，前后端分离，只有数据交互
+
+
+***************************************************************************************************
+SpringMVC的工作流程 请求原理
+	SpringMVC是基于Servlet规范。已请求为驱动，围绕Servlet设计的
+	核心对象 DispatcherServlet 中央调度器
+	前端控制器 Front Controller 负责接收所有对Controller的请求
+
+
+DispatcherServlet的职责
+	系统的门面，对外的入口。接收请求，并控制请求的处理过程。所有请求都必须有Dispatcherservlet控制。
+		可以理解为一种门面设计模式
+	访问其他的控制器，用来处理业务逻辑。
+	创建合适的视图，将上一步中的业务处理结果放到视图作为响应。
+	解耦了其他组件，所有组件只与DispatcherServlet有交互，彼此之间没有关联。不影响维护，升级等
+  **实现ApplicationContextAware，每个DispatcherServlet都拥有自己的WebApplicationContxt 容器对象上下文环境
+		它继承自ApplicationContext。包含了其管理的与Web相关的Bean对象，例如 @Controller注释的类，视图解析器等。
+		**Bean 管理：WebApplicationContext 负责管理 Web 应用程序中的 Bean，包括控制器、服务类、数据访问对象等。
+		**请求范围管理：WebApplicationContext 可以管理请求范围的 Bean，确保每个请求的 Bean 是独立的。
+		**资源管理：WebApplicationContext 可以加载和管理 Web 应用程序中的资源，如配置文件、静态文件等。
+		**国际化支持：提供国际化支持，管理消息资源和本地化信息。
+	Servlet + SpringIoC依赖倒置 组合
+
+
+
+***********************************
+DispatcherServlet继承关系图								ServletConfig		Servlet
+
+								Aware							GenericServlet
+
+	ApplicationContextAware				EnvironmentAware		HttpServlet
+
+													HttpServletBean
+
+								FarmeworkServlet
+
+								DispatcherServlet
+
+
+***********************************
+SpringMVC的请求流程
+
+**			用户请求1   用户请求2
+
+**		DispatcherServlet中央调度器
+
+**		HandlerMapping处理器映射器
+
+			返回处理器执行器链
+
+**		HandlerAdapter处理器适配器（适配器模式，只需要调用一个统一的方法，这个方法去适配调用不同的控制器方法）
+
+			  执行控制器方法 ha.handle()
+			  返回数据，视图  ViewController  view.render()
+			如果有异常，调用HandlerExceptionResolver 可以自定义异常处理器
+
+** Controller1    Controller2    Controller3
+
+**Service1    Service2    Service3   Service4
+
+**				Dao Mapper
+
+**					DB
+
+
+在SpringMVC中， 请求方式+uri 应该是唯一的，以确保每一个请求都有唯一的一个Controller为其处理。否则报错
+
+****
+复习：
+	Servlet中处理请求的核心方法是 doService
+
+	DispatcherServlet处理请求的核心方法是 doDispatcher，在doService方法中被调用
+
+	其中也会有一个单独的 check 方法来判断是否是文件上传请求
+
+
+***********************************
+SpringBoot-SpringMVC的自动配置类
+	可以用来初始化DispatcherServlet，并配置访问路径
+
+	WebMvcAutoConfiguration
+
+@AutoConfiguration(
+    after = {DispatcherServletAutoConfiguration.class, 
+			TaskExecutionAutoConfiguration.class, 
+			ValidationAutoConfiguration.class}
+)
+@ConditionalOnWebApplication(
+    type = Type.SERVLET
+)
+@ConditionalOnClass({Servlet.class, DispatcherServlet.class, WebMvcConfigurer.class})
+@ConditionalOnMissingBean({WebMvcConfigurationSupport.class})
+@AutoConfigureOrder(-2147483638)
+@ImportRuntimeHints({WebResourcesRuntimeHints.class})
+public class WebMvcAutoConfiguration {
+}
+
+
+注：SpringWeb的依赖是Spring官方的依赖
+<artifiactId>spring-boot-starter-web
+
+在 org.springframework.boot.autoconfigure.AutoConfiguration.imports 文件中 就有引入 WebMvcAutoConfiguration
+
+***********************************
+可以在普通Java类中定义接口，并给出实现的内部类。但并不规范，不符合面向对象编程思想。
+
+可以在注解的代码中定义枚举类型。
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface MyAnnotation {
+
+    // 定义枚举类型作为参数  枚举类型通常都是公共的，静态的，便于访问
+    public static enum Status {
+        ACTIVE, INACTIVE
+    }
+
+    // 使用枚举类型作为参数
+    Status status() default Status.ACTIVE;
+}
+***********************************
+中央调度器 DispatcherServlet的自动配置
+DispatcherServletAutoConfiguration
+
+作用：
+	引入WebMvcProperties.class  完成中央调度器的配置
+
+自动配置HandlerMapping等支持类
+
+自动配置Web容器 Tomcat内嵌服务器 ServletWebServerFactoryCOnfiguration.EmbeddedTomcat.class
+	是使用的工厂类完成配置
+
+服务器配置
+	ServerProperties
+
+配置：
+	在配置文件 application.properties中添加
+#配置解析url策略
+spring.mvc.pathmatch.matching-strategy=path_pattern_parser
+#配置web应用参数
+server.port=8001
+server.servlet.context-path=/leo
+server.servlet.encoding.charset=UTF-8
+server.servlet.encoding.force=true
+#配置tomcat服务器参数
+server.tomcat.max-connections=8192
+server.tomcat.max-http-response-header-size=8KB
+server.tomcat.threads.max=200
+#配置tomcat服务器 日志 参数
+server.tomcat.accesslog.directory=D:/logs
+server.tomcat.accesslog.enabled=true
+server.tomcat.accesslog.prefix=access_leo_log
+server.tomcat.accesslog.file-date-format=yyyy-MM-dd
+server.tomcat.accesslog.suffix=.log
+#配置中央调度器
+spring.mvc.servlet.path=/leo
+spring.mvc.servlet.load-on-startup=0
+spring.mvc.format.date-time=yyyy-MM-dd HH:mm:ss   主要在接收参数为时间时使用
+
+
+***************************************************************************************************
+SpringMVC中 使用注解方式 创建HttpServlet Filter Listener
+	在Spring框架中，这些对象要注册成为 受Spring管理的Bean对象
+
+注册：
+	ServletRegistrationBean    FilterRegistrationBean   ListenerRegistrationBean
+
+执行顺序：
+	@Order注解 或实现Ordered接口
+  **Filter 执行顺序：Servlet 容器根据 web.xml 部署描述符中 <filter-mapping> 元素的顺序来确定 Filter 的执行顺序。
+		在 <filter-mapping> 中，可以使用 <filter-mapping> 的 <url-pattern> 元素指定 Filter 的映射路径，
+		并按照 <filter-mapping> 的顺序依次执行 Filter。
+  **Listener 执行顺序：Servlet 容器会按照 Listener 在 web.xml 部署描述符中的声明顺序来初始化和调用 Listener。
+		通常情况下，Listener 的执行顺序与声明顺序一致。
+
+Filter：Filter 主要使用了责任链模式（Chain of Responsibility Pattern），
+	允许多个 Filter 协同工作，每个 Filter 负责特定的功能，可以按照指定的顺序依次执行。
+
+Listener：Listener 主要使用了观察者模式（Observer Pattern），允许组件在特定事件发生时注册监听器，
+	当事件发生时通知所有注册的监听器执行相应的操作。
+
+*********************
+SpringMVC中，Servlet已经完全支持使用注解创建 @WebServlet()
+	需要指定url地址
+	@WebServlet 就相当于web.xml文件中 有关servlet声明的 <servlet> 标签和 <servlet-mapping>标签	
+
+使Servlet Web组件生效，需要在启动类上添加包扫描注解，指定对应的路径，加载顺序等
+	@ServletComponentScan(basePackage = "")
+	可以扫描包下的所有Servlet组件，包括Servlet Filter Listener等
+
+也可以不使用注解而使用编码方式控制Servlet，使用ServletRegistrationBean完成servlet各项参数配置
+	需要自己建立
+	@Configuration
+	WebAppConfig  web配置文件，纳入容器管理
+	方法添加 @Bean 让容器管理自动创建
+
+@Bean
+public ServletRegistraionBean servletRegistrationBean(){
+	ServletRegistrationBean registrationBean = new ServletRegistrationBean();
+	registrationBean.setServlet( new 构造());
+	registrationBean.addUrlMappings("uri");
+	registrationBean.setLoadOnStartUp(1);
+	return registrationBean;
+}
+
+
+**************************************************************************************************
+Filter的创建，配置以及作用
+	作用：记录各项日志，权限验证，超时验证，敏感字符过滤等
+	SpringMVC Web框架中就大量使用了过滤器，例如CommonsRequestLoggingFilter，CorsFilter等
+	SpringSecurity安全框架也使用了大量的Filter来完成鉴权操作，
+
+SpringMVC中使用注解 @WebFilter创建 自定义的 Filter对象
+	指定过滤路径
+使用：
+@WebFilter(urlPatterns = "/*")
+	
+	重写核心方法 doFilter
+	。。。
+	filterChain.doFilter(servletRequest, servletResponse);
+
+使用编码方式代替注解来注册过滤器，可以使用FIlterRegistrationBean
+
+
+****************
+Filter的执行顺序
+
+排序：
+	过滤器名称按照字典排序顺序，AuthFilter -> LoginFilter -> ZipFilter
+	设置Filter的order属性，由order属性决定执行顺序，值越小，优先级越高
+		可以使用FilterRegistrationBean注册
+			registration.setOrder(1);
+		无法在 @WebFilter注解中直接指定，但可以额外添加 @Order(1) 注解来实现
+
+
+SpringBoot提供了很多内置的Filter
+	可以使用 FilterRegistrationBean来注册使用
+	使用时 new对应的Filter并给与对应属性即可
+	CommonsRequestLoggingFilter commonlog = new CommonsRequestLoggingFilter();
+
+logging.level.web = debug
+设置日志级别
+
+常用：字符集过滤器 CharacterEncodingFilter 默认启用
+
+**************************************************************************************************
+Listener 的创建 和作用
+
+SpringMVC中 使用注解 @WebListener即可创建自定义Listener对象
+不同的功能 监听内容需要实现不同的接口：
+	jakarta.servlet.http.HttpSessionAttributeListener
+	jakarta.servlet.http.HttpSessionListener
+	jakarta.servlet.ServletContextAttributeListener
+	jakarta.servlet.ServletContextListener
+	jakarta.servlet.ServletRequestAttributeListener
+	jakarta.servlet.ServletRequestListener
+	jakarta.servlet.http.HttpSessionIdListener
+	并重写对应的核心方法
+
+
+也可以在webConfig中使用 ServletListenerRegistrationBean完成注册登记Listener对象
+
+
+**************************************************************************************************
+重要接口WebMvcConfigurate
+	是一个配置类，采用JavaBean的形式代替原本的 xml配置文件格式
+	可以个性化配置SpringMVC框架，可以自定义Interceptor，ViewResolver，MessageConverter
+
+使用：自定义一个类来实现接口，实现对应的方法完成对应项的配置
+重点：页面跳转控制器、数据格式化、拦截器
+
+
+********************
+页面跳转控制器
+	Springboot中使用页面视图，需要根据请求，跳转到对应页面时。
+	可以使用Controller对象完成跳转，转发到一个视图。这个Controller并无实际功能处理。
+	
+	现可以使用 addViewController() 完成从请求到视图的跳转，无需额外定义一个Controller
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        /*
+        配置请求路径uri 和 目标页面名称
+         */
+        registry.addViewController("/welcome").setViewName("index");
+    }
+
+
+********************
+数据格式化
+	数据转换接口 Formatter<T> 用来将一种数据类型转换为另一种数据类型。相似的还有Converter<S,T>
+	Formatter<T> 只能将String类型转换为其他数据类型。
+		更适用于web，因为Web请求的所有参数都是String
+
+使用过的 @DateFormatter @NumberFormatter 等注解，都是基于Foramtter接口实现的数据解析
+
+也可以自定义合适的Foramtter，将String数据转化为实际的对象，方便后续编码操作。
+
+public interface Formatter<T> extends Printer<T>, Parser<T> {
+}
+
+这种接口也叫做组合接口，没有自己的方法，其内容来自 Printer<T>, Parser<T>这两个接口
+	意为转化并输出
+
+举例：当接收到的数据格式不同于普通的json等常见格式，例如与硬件设备的交互。
+	接收到可能是数据串等。需要自定义转换语法来接收。
+	将数据进行拆分整理的过程逻辑，封装到自定义的Formatter中
+
+实现Formatter接口并实现 parse方法，print方法
+	分别定义数据收集的逻辑与数据输出展示的逻辑
+
+然后在WebMvcConfigurer中 重写addFormatters方法，添加自定义的Formatter
+
+然后在Controller方法中使用自定义Formatter接收特定格式的数据
+	这里检测是根据要转换的类型来寻找匹配这个类型所具有的Formatter<类型>
+
+	
+使用自带的HttpClient可以模拟前端发送的表单提交数据请求
+
+
+********************
+拦截器
+	HandlerInterceptor 接口和其实现类被叫做拦截器。拦截器是SpringMVC框架的对象，与Servlet无关
+	请求先由DispatcherServlet接收，然后经过拦截器处理，然后交给Controller
+	拦截器可以用来权限验证，记录日志，过滤字符，token验证等等。自定义拦截器。
+
+定义：
+	声明类实现HandlerInterceptor接口，重写方法，编写放行与拦截逻辑。
+	登记注册拦截器 addIntercrptors并指定拦截的请求
+
+    /**
+     * 使用框架管理拦截器对象的创建
+     */
+    @Bean
+    public AuthInterceptor authInterceptor(){
+        return new AuthInterceptor();
+    }
+
+    /**
+     * 注册拦截器
+     * 并指定拦截路径，可以使用通配符
+     * @param registry 拦截器注册器对象
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor())
+                .addPathPatterns("/article/**")
+				.excludePathPatterns("/article/query");
+    }
+
+
+**********************
+多个拦截器的运用与顺序
+	实际中往往需要多个拦截器共同运行来完成功能。
+	例如登录验证--一级权限---二级权限
+	多个拦截器之间使用 order() 方法来设置顺序，值越小，优先级越高
+
+
+        registry.addInterceptor(authInterceptor())
+                .addPathPatterns("/article/**")
+                .excludePathPatterns("/article/query")
+                .order(2);
+
+        registry.addInterceptor(loginInterceptor())
+                .addPathPatterns("/**")
+                .order(1);
+
+
+**************************************************************************************************
+文件的上传，文件上传解析器
+
+SpringBoot3具有自己的文件上传实现，取代了以前的 Apache Commons FileUpload
+实现：
+	接口 MultipartResolver
+	实现类 StandardServletMultipartResolver解析器   取代了 CommonsMultipartResolver
+
+	原理 封装了读取Post请求体中的请求数据，读取文件内容，Http中文件是通过请求体multipart/form-data上传的
+			文件分为 文本数据 和 二进制 文件
+
+使用：
+	给参数添加注解 (@RequestParam("target") MultipartFile multipartFile)
+	在Controller方法上添加此参数就代表，走此请求的控制器方法可以接受前端传来的文件，并注入参数，更加便利持久化
+
+上传表单
+	类型 multipart/form-data 请求类型 post
+	还需要提交表单
+        <form action="uplodeFile" enctype="multipart/form-data" method="post">
+            选择文件：<input type="file" name="target">
+            <br>
+            <br>
+            <input type="submit" value="上传">
+        </form>
+
+Springboot的对于文件上传的配置
+	单个文件上传最大支持，默认1MB
+	spring.servlet.multipart.max-file-size=10MB
+	单次请求可以上传文件的最大值，默认10MB
+	spring.servlet.multipart.max-request-size=10MB
+	超过指定大小，直接写文件到磁盘，不经过内存处理，默认0B
+	spring.servlet.multipart.file-size-threshold=0KB
+
+不仅要对SpringBoot应用做出配置，浏览器对于请求的大小也有限制，需要进行配置。
+ 
+SpringBoot  Servlet中 5xx类的后台错误，的共同路径 5xx.html
+
+
+************************************
+Servlet3.0规范中对于文件上传的处理：
+	Jakarta.servlet.http.Part 接口来处理 multipart/form-data （格式） Post请求中接收到表单数据
+	可以实现不同文件格式的标准化上传处理
+	有了Part对象，使用其 write 方法将上传文件保存到服务器本地磁盘目录
+
+在HttpServletRequest对象中，封装了获取Part的方法
+****即为SpringBoot在HttpServletRequest接口中引入的新方法：
+	request.getParts()  返回所有Part 对象的集合
+	getPart(String name)  检索给定名字的 Part对象
+
+获取到part对象后即可写到服务器磁盘中
+	part.write(filename)
+
+StandardServletMultipartResolver 是对 MultipartResolver 接口的封装，实现基于Servlet规范的文件上传，实现了MultipartResolver接口
+
+在下一层的处理是交给 StandardMultipartHttpServletRequest类，调用parseRequest方法，从请求体中拿到文件
+	迭代遍历，转化为 part 对象
+
+    private void parseRequest(HttpServletRequest request) {
+        try {
+            Collection<Part> parts = request.getParts();
+            this.multipartParameterNames = new LinkedHashSet(parts.size());
+            MultiValueMap<String, MultipartFile> files = new LinkedMultiValueMap(parts.size());
+            Iterator var4 = parts.iterator();
+
+            while(var4.hasNext()) {
+                Part part = (Part)var4.next();
+                String headerValue = part.getHeader("Content-Disposition");
+                ContentDisposition disposition = ContentDisposition.parse(headerValue);
+                String filename = disposition.getFilename();
+                if (filename != null) {
+                    files.add(part.getName(), new StandardMultipartFile(part, filename));
+                } else {
+                    this.multipartParameterNames.add(part.getName());
+                }
+            }
+
+            this.setMultipartFiles(files);
+        } catch (Throwable var9) {
+            this.handleParseFailure(var9);
+        }
+	}
+
+然后使用StandardMultipartFile封装了part对象，并提供了基础方法
+	静态内部类的写法，保证唯一对应
+	private static class StandardMultipartFile implements MultipartFile, Serializable {
+        private final Part part;
+        private final String filename;
+
+        public StandardMultipartFile(Part part, String filename) {
+            this.part = part;
+            this.filename = filename;
+        }
+
+        public String getName() {
+            return this.part.getName();
+        }
+
+        public String getOriginalFilename() {
+            return this.filename;
+        }
+
+        public String getContentType() {
+            return this.part.getContentType();
+        }
+
+        public boolean isEmpty() {
+            return this.part.getSize() == 0L;
+        }
+
+        public long getSize() {
+            return this.part.getSize();
+        }
+
+        public byte[] getBytes() throws IOException {
+            return FileCopyUtils.copyToByteArray(this.part.getInputStream());
+        }
+
+        public InputStream getInputStream() throws IOException {
+            return this.part.getInputStream();
+        }
+
+        public void transferTo(File dest) throws IOException, IllegalStateException {
+            this.part.write(dest.getPath());
+            if (dest.isAbsolute() && !dest.exists()) {
+                FileCopyUtils.copy(this.part.getInputStream(), Files.newOutputStream(dest.toPath()));
+            }
+
+        }
+
+        public void transferTo(Path dest) throws IOException, IllegalStateException {
+            FileCopyUtils.copy(this.part.getInputStream(), Files.newOutputStream(dest));
+        }
+    }
+
+	
+
+即在项目中可以手动实现 MultipartResolver 接口，来完成Servlet规范下，自定义上传以及文件预处理逻辑的处理
+
+#配置上传文件的输出目录
+spring.servlet.multipart.location=E://Target/
+
+part对象可以获取头文件
+	part.getHeader(""conten-disposition")
+	servlet规范规范了其信息的格式，便于后端进行解析
+
+举例：
+	contentDisp=form-data; name="upfile"; filename="1.txt"
+
+
+************************************
+多文件上传
+
+接收参数变为数组，即为从 @RequestParam("target")MultiPartFile file 变成 MultiPartFiles[] files
+
+前端请求发送多文件则是在提交表单中，添加多个 <input type="file" name="target"> 标签
+
+想要解析多个文件就需要遍历 MultiPartFiles[] 数组，逐一获取
+
+
+
+**************************************************************************************************
+异常的处理
+
+Controller处理请求的过程中发生了异常，DispatcherServlet会将异常委托给异常处理器来处理
+异常处理器即为专门用来处理异常的类
+
+实现了 HandlerExceptionResolver 接口的都是异常处理类。
+
+
+************************************
+全局异常处理器
+SpringBoot框架提供了注解，来便捷的自定义异常处理
+使用：
+	@ExceptionHander
+	@ControllerAdvice
+	@RestControllerAdvice(只返回数据，相当于其中的方法全部添加了 @ResposneBody 即全是json数据)
+
+Advice即为 AoP中的 增强，直译就是控制器增强器，在不修改源代码前提下，给Controller添加异常处理的功能
+
+通常项目中会将异常处理统一管理维护，定义一个异常处理类来完成全部的异常的检测与控制
+配合自定义异常来完成业务需求的功能
+
+*******
+复习springMVC请求流程
+
+请求到中央调度器 DispatcherServlet
+筛选控制器 使用处理器映射器 HandlerMapping 获得处理器执行器链 HandlerExecutionChain
+使用处理器适配器 HandlerAdapter
+请求执行Controller ---- Service ----- Dao
+如有异常，进入异常处理程序 HandlerExceptionResolver 返回异常处理结果
+
+*******
+在DispatcherServlet类中，核心方法doDispatch中
+
+try语句块中包含了控制器方法的执行语句
+//Actually invoke the handler
+mv = ha.handle(processedRequest, reponse, mappedHandler,getHandler());
+
+捕获异常
+catch(Exception ex){
+	dispatchException = ex;
+}
+
+此参数会交给 processDispatchResult 可以为空 @Nullable
+如有异常，则与异常处理器进行交互，进行处理
+if(exception <> null){
+	if(exception instanceof ModelAndViewDefiningException){
+		logger.debug("........", exception);
+		mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+	}
+	else{
+		...
+		mv = processHanderException(request, response, handler, exception);
+		...
+	}
+}
+
+之后processHanderException会遍历handlerExceptionResolvers 对应匹配并执行
+if(this.handlerExceptinoResolvers <> null){
+	for(HandlerExceptionReslover resolver : this.handlerExceptionResolvers){
+		exMv = resolver.resolveException(request, response, hander, ex);
+		if(exMv <> null){
+			break;
+		}
+	}
+}
+
+*******
+自定义异常处理器
+匹配要处理的异常
+返回视图或者数据，交由前端处理
+
+@ControllerAdvice
+public class GlobalExceptionHandler{
+
+	// 可以自定义异常类来匹配
+	@ExceptionHandler({ArithmaticException.class})
+	public String handlerArithmeticException(ArithmeticException ex, Model model){
+		String error = e.getMessage();
+		model.addAttribute("MyError", error);
+
+		自定义业务逻辑
+
+		return "exp";
+	}
+
+}
+
+
+resources
+	static
+		静态页面通常放在该文件夹下
+	templates
+		可以放一些自定义页面，异常页面等
+
+*******
+异常类的处理通常匹配具体的类，尽量减少高级异常，父类的使用与匹配。
+增加异常处理的准确度
+多会使用业务相关的自定义异常
+最后增加一个根异常 Exception.class ，来兜底没有匹配的其他情况
+
+
+************************************
+参数验证，JSR-303 验证错误，捕获异常，交由框架处理
+全局捕获BindException，避免在每一个controller中都编写相似代码来捕获异常
+
+举例：
+	需求：全局处理JSR-303校验异常
+
+********
+复习：使用JSR-303完成参数校验
+	使用：引入JSR-303依赖
+	<artifactId>spring-boot-starter-validation</artifactId>
+	在bean的参数上添加注解
+		@NotNull(message = "can not be null")
+		@NotBlank(message = "")
+		@Range(min = 1, max = 99, message = "") 等
+	在Controller方法的形参上添加注解 @Validated 表示该参数需要校验
+	
+
+********
+JSR-303校验产生的异常为 BindException.class
+在全局异常处理中添加方法进行匹配，并进行处理
+获取异常中携带的信息，遍历处理并返回错误信息交由前端处理
+
+@ResponseBody
+@ExceptionHandler({BindException.class})
+public Map<String, Object> handleJSR303Exception(BindException e){
+	Map<String, Object> map = new HashMap<>(32);
+	
+	BindingResult result = e.getBindingResult();
+	if(result.hasErrors()){
+		List<FieldError> errors = result.getFieldErrors();
+
+		errors.forEach(field ->{
+			map.put("错误字段名：[" + field.getField() + "];原因为：" , field.getDefaultMessage);
+		});
+	}
+
+	return map;
+}
+
+
+************************************
+SpringBoot3 对于异常反馈的内容进行了增强
+	在此之前 错误信息包含了 Http Status Code， 时间，异常描述信息
+	无法分析具体的异常原因等
+
+RFC 7807 规范 Problems Details for HTTP APIs
+	对于错误信息的内容以及应答格式给出了规范与定义
+	规范了返回的错误信息的类型，以往可以返回map 也可以返回bean 等类型
+
+RESTFul服务中通常需要在响应体中包含错误详情，Problem Details定义了Http应答错误的处理细节
+	增强了响应错误的内容，包含标准和非标准的字段。同时支持json和xml两种形式
+
+Problem Details的JSON应答格式
+{
+	"type": "string",
+	"title": "string",
+	"status": "number",
+	"detail": "string",
+	"instance": "string"
+}
+
+type: 标识错误类型的URI，加载此URI应转向此错误的文档。
+	如果系统功能完善可以引到专门的错误处理模块，默认为空白页面about:blank
+	此URI可以指向另一个Controller方法，专门用于处理错误的情况
+title: 问题的简短摘要
+detail: 错误信息的详细描述，对上述title的详细阐述
+instance: 标识该特定故障实例的URI，可以作为发生的这个错误的ID，因为访问了该地址发生了异常
+status: 错误使用的HTTP状态码
+还可以自定义扩展字段，采用 key: value 格式，用于增强对该问题的描述
+
+******
+使用：
+	引入 ResponseEntityExceptionHandler  与 @COntrollerAdvice 一同使用，处理所有SpringMVC中的异常
+	返回的实体类为 org.springframework.http.ProblemDetail 由框架自动转换为json返回给前端
+
+	@ExceptionHandler({BookNotFoundException.class})
+    public ProblemDetail handlerBookNotFoundException(BookNotFoundException e){
+        /*
+		将要展示的信息获取，处理，并封装到ProblemDetail对象中，返回
+		例如HttpStatus状态码等
+         */
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+        /*
+        使用URI工具类，创建并给出URI地址，用于提供此问题的文档与解决方案
+         */
+        pd.setType(URI.create("/api/problems/bookNotFoundException"));
+        pd.setDetail("异常：未找到图书。请注册图书。");
+
+        return pd;
+	}
+
+执行结果
+
+HTTP/1.1 404 
+Content-Type: application/problem+json
+Transfer-Encoding: chunked
+Date: Sun, 02 Jun 2024 11:25:27 GMT
+Keep-Alive: timeout=60
+Connection: keep-alive
+
+{
+  "type": "/api/problems/bookNotFoundException",
+  "title": "异常：未找到图书。请注册图书。",
+  "status": 404,
+  "detail": "此isbn：B007无对应图书",
+  "instance": "/api/findBookByIsbn"
+}
+
+******
+自定义ProblemDetail中的字段
+
+problemDetail.setProperty("key", "value");
+problemDetail.setProperty("投诉邮箱", "123456789@123.com");
+
+自定义信息会由框架转换为json格式返回
+
+******
+流式编程：
+
+获取bookContainer中存储图书的List<BookRecord>，并将List中每一个BookRecord实体中的isbn属性与传入的isbn参数比较
+	获取相同的第一个
+
+        Optional<BookRecord> bookRecord = bookContainer.getBooks().stream().filter(el ->
+                el.isbn().equals(isbn)
+        ).findFirst();
+
+******
+使用接口 ErrorResponse 的实现类 ErrorResponseException 来返回
+
+ErrorResponseException是ProblemDetail 的包装类，核心对象依旧是ProblemDetail
+
+抛出的ErrorResponseException.class 会被Spring框架的 ResponseEntityExceptionHandler 异常处理器捕获
+	即交由框架进行异常处理
+
+只需自定义一个异常类去继承 ErrorResponseException 
+	编写对应处理逻辑，
+	重写构造方法，收集并提供对应异常信息，完整异常处理的自定义
+
+可以封装工具方法，创建符合RFC 7807规范的 ProblemDetail对象
+	处理数据并给RFC7807字段赋值
+	并赋值给构造方法
+	解决了每个ExceptionHanlder中都要创建一个ProblemDetail的代码重复问题
+
+配置：
+spring:
+  mvc:
+    problemdetails:
+      enabled: true
+#开启支持RFC7807
+
+如果需要一个方法处理多个异常，可以在 @ExceptionHandler({ , , , ...}) 中 匹配多个异常
+
+******
+大厂等，会通过重写
+	ViewResolver 视图解析器
+	HandlerMapping 处理器映射器
+	HandlerAdapter处理器适配器
+	...
+完成框架的定制，业务化定制等，使得功能更加贴合
+
+
+
+******************************************************************************************
+HttpExchange
+SpringBoot提供的远程访问的技术，包装了底层Http客户的访问细节
+
+注解 @HttpExchange   
+	代表要进行远程访问的操作，简化了以往的手动编写HttpClient的操作，访问地址，超时时间等 
+	提供接口并编写方法即可
+ 
+SpringBoot中定义了接口来提供HTTP服务，由框架创建的代理对象实现类此接口，
+来调用WebClient对象实现http协议的远程访问
+
+***********************************
+WebClient特性
+	在早期Spring框架中，如果需要调用其他系统提供的http服务，就需要使用RestTemplate来访问
+	RestTemplate是在Spring3中引入的同步的阻塞的HTTP客户端，存在很大的性能瓶颈
+	Spring5 中 引入了WebClient 作为 非阻塞式的HTTP客户端
+
+WebClient特性：
+	非阻塞，异步请求
+	基于Reactor的响应式编程
+	占用硬件资源少，支持高并发
+	支持Java8的函数是编程与Lambda表达式
+
+*******
+示例学习
+	准备：
+		安装 GsonFormat 插件，便于json与Bean之间的转换
+		开源、免费，提供RestHttp服务，每月可以提供20亿请求， http://jsonplaceholder.typicode.com
+			可以用来测试远程http访问，提供了几种服务命令与测试数据
+
+完成声明式HTTP远程服务
+	访问http://jsonplaceholder.typicode.com 提供的 todo 服务
+	基于RESTful风格，添加新的todo，修改todo，修改todo中的title，查询某个todo。
+	声明接口提供对象 http://jsonplaceholder.typicode.com/todos 的访问
+
+	需要引入额外的依赖完成声明式HTTP远程服务。 Spring Reactive Web 即为 webflux依赖
+
+********
+	使用Jsonformat工具，可以将json文本粘贴并识别，自动创建字段，和对应的setget方法
+	并且可以手动修改类型，以适应业务需求。或者是普通类型的包装类
+
+********
+	HttpExchange注解同样具有其他别名
+		GetExchange
+		PostExchange
+		PutExchange
+		PatchExchange
+		DeleteExchange
+
+********
+PathVarible 路径解析注解，将值传递给请求路径
+
+@GetExchange("/todos/{id}")
+Todo getTodoById(@PathVariable("id") Integer id);
+
+********
+交由框架创建服务接口的代理对象，基于WebClient核心对象。
+本质上远程访问是WebClient去做的
+此处返回的时经过代理后的 TodoService接口的代理对象
+直接使用 @Bean注解 使其纳入容器管理，作为Service接口的实现类
+
+    @Bean
+    public TodoService requestService(){
+
+        //创建WebClient对象
+        WebClient webClient =
+                WebClient.builder().baseUrl("https://jsonplaceholder.typicode.com/").build();
+
+        //创建代理工厂
+        HttpServiceProxyFactory proxyFactory =
+                HttpServiceProxyFactory.builder(WebClientAdapter.forClient(webClient)).build();
+
+		//使用工厂创建代理类
+        return proxyFactory.createClient(TodoService.class);
+    }
+
+实际请求为：
+	https://jsonplaceholder.typicode.com/todos/1
+	使用https://jsonplaceholder.typicode.com/ 作为url创建此基本路径下的WebClient代理对象
+	该路径下所有访问接口，写在同一Service中，对应方法来处理。
+
+********
+Post请求，传参为json数据，需要指定accept 指定post提交类型为json，框架会自动将参数的对象转化为json格式发送
+
+    @PostExchange(value = "/todos/", accept = MediaType.APPLICATION_JSON_VALUE)
+    Todo createTodo(@RequestBody Todo newTodo);
+
+PUT请求，返回ResponseEntity 可以获取更全面的应答信息，可以获取headers body 与 httpstatus
+
+    @PutExchange(value = "/todos/{id}", accept = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Todo> modifyTodo(@PathVariable("id") Integer id, @RequestBody Todo newTodo);
+
+***********************************
+Http服务接口的方法定义--总结
+
+使用 @HttpExchange注解，声明接口作为http远程服务使用。在方法，类级别上使用，
+	通过注解以及方法的参数来设置http请求的细节
+
+方法允许的参数列表：
+	URI，覆盖注解中的uri
+	HttpMethod，覆盖注解中的httpMethod
+	@PathVarible  为注解中uri的占位符传值，参数可以为单个值也可以是 Map<String, Object> 常用于Rest风格参数
+	@RequestHeader 将参数添加到请求头中
+	@RequestParam  请求参数  传统风格 /?id=1&userid=2
+	@RequestBody  将对象添加到请求体 指传递 json格式参数时
+	@RequestPart  发送文件时使用
+	@CookieValue  向请求中添加cookie信息
+
+方法的返回值类型
+	void 无需应答
+	HttpHeaders 存储响应信息的header
+	对象  将响应结果解析为声明的类型对象，通常都是json和bean之间的转换
+	ResponseEntity<T> 解析应答内容，从应答实体中获取 header响应头 body响应体与httpstatus状态码
+
+注解允许的参数：
+	value 默认 uri
+	accept 指定接收参数类型
+	method 指定请求类型
+	contentType
+
+注解的组合使用：
+	可以将写在创建代理对象时的baseurl，这样在创建WebClient对象时就直接.Create()即可无需指定url
+	写在Service接口上的 
+	@HttpExchange(url = "https://jsonplaceholder.typicode.com/")
+	public interface AlbumService{
+		
+		然后在方法上只需要添加后续的url即可
+		@HttpExchange(method = "GET", url = "/albums/{id}")
+		Albums getById(@PathVarible("id") Integer id)
+		
+	}
+
+	
+***********************************
+HttpExchange 定制WebClient代理对象  处理超时与报错等情况
+
+关键：定制WebClient对象
+
+@Bean
+    public TodoService requestService() {
+        //反应式编程包 设置超时时间
+        //添加读超时处理器
+        //添加写超时处理器
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
+                .doOnConnected(conn -> {
+                    conn.addHandlerLast(new ReadTimeoutHandler(10));
+                    conn.addHandlerLast(new WriteTimeoutHandler(10));
+                });
+        //配置WebClient对象 设置异常处理
+        //配置默认的异常处理 4xx, 5xx
+        //抛出带有状态码的异常信息
+        //底层使用反应式框架，需要使用Mono对象进行包装
+        WebClient webClient = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .defaultStatusHandler(HttpStatusCode::isError, clientResponse -> {
+                    System.out.println("************WebClient请求异常************");
+                    return Mono.error(new RuntimeException("请求异常" + clientResponse.statusCode().value()));
+                })
+                .build();
+        //创建对应WebClient-适配器的代理工厂
+        HttpServiceProxyFactory proxyFactory =
+                HttpServiceProxyFactory.builder(WebClientAdapter.forClient(webClient)).build();
+        //创建TodoService接口的代理对象
+        return proxyFactory.createClient(TodoService.class);
+    }
+
+
+
+******************************************************************************************
+Thymeleaf 模板引擎
+	JSP的代替，SpringBoot3已经不支持jsp
+	设计好的文件会被翻译成html页面
+	重点：Java环境下的服务器端模板引擎
+	结合html dom 元素一同使用
+
+常用表达式：
+	${...}  变量表达式			<p th:text="${userName}">中国</p>
+	@{...}  链接网址表达式		th:href="@{http://www,baidu.com}"
+
+html中引入Thyemleaf
+	<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+if表达式
+	th:if="布尔表达式"  如果布尔表达式为真，则显示标签中的代码片段，反之不显示
+		<div th:if="${user.age > 18}">
+			显示此内容
+		</div>
+
+for表达式
+<table>
+	<tr th:each="item:${list}">
+		<td th:text="${item}">
+	</tr>
+</table>
+
+********
+Thymeleaf基础默认配置
+	
+#SpringBoot集成Thymeleaf
+#文件名的前缀后缀
+spring.thymeleaf.prefix=class:/templates/
+spring.thymeleaf.suffix=.html
+#缓存
+spring.thymeleaf.cache=true
+#编码格式
+spring.thymeleaf.encoding=UTF-8
+
+
+
+******************************************************************************************
+项目整合
+	脚手架：Spring Web, Thymeleaf, MyBatis Framework, MySQL Driver
+	pom添加依赖：JSR-303  <artifactId>spring-boot-starter-validation</artifactId>
+	完成增删改查
+
+配置文件：
+	根据业务功能,自定义划分配置文件内容便于管理
+****app-base.yml
+
+#文章相关设置
+article:
+  #最低文章阅读数量
+  lowest-read: 10
+  #首页显示最多的文章数量
+  top-read: 20
+
+****db.yml
+
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/blog?serverTimezone=Asia/Shanghai&useUnicode=true
+    username: root
+    password: Lbw151290007
+    hikari:
+      auto-commit: true
+      maximum-pool-size: 20
+      minimum-idle: 10
+
+      connection-test-query: select 1
+      connection-timeout: 20000
+
+      data-source-properties:
+        cachePrepStmts: true
+        dataSource.cachePrepStmts: true
+        dataSource.prepStmtCacheSize: 250
+        dataSource.prepStmtCacheSqlLimit: 2040
+        dataSource.useServerPrepStmts: true
+
+然后在核心配置文件 application.yml 中，引入这两个配置
+
+spring:
+  config:
+    import: configuration/app-base.yml, configuration/db.yml
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+server:
+  servlet:
+    context-path: /blog
+  port: 8000
+
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:/mapper/**/*.xml
+
+**************************************
+知识点：
+	MVC框架 流程
+	包扫描路径   @MapperScan
+	自动配置注解   @EnableConfigurationProperties
+	读取配置文件   @ConfigurationProperties
+	启用事务管理   @EnableTransactionManagement
+	Mapper中编写方法，注解式编写SQL语句与Results结果映射
+	Service实现类，引入的成员final修饰防止修改，使用构造方法初始化final成员， @Autowired注入
+	Controller类，引入的成员final修饰防止修改，使用构造方法初始化final成员， @Autowired注入
+	Rest风格编程，纯json数据与前端交互
+	返回model，Thymeleaf模板引擎进行解析，展示数据
+	前端展示数据，编写javascript脚本，编写事件
+
+********
+	配置页面自动跳转，页面视图控制器
+	自定义类，实现WebMvcConfigurer，添加注解 @Configuration
+		重写 addViewControllers方法  添加拦截器就重写addInterceptors方法
+		指定url路径和为其跳转到的视图页面
+
+********
+	全局异常处理器捕获JSR303参数验证异常
+	@ControllerAdvice
+
+********
+	控制事务
+	@Transactional(rollbackFor ) 以及超时事件，传播方式等
+	增，删，改，无论多表还是单表均需要添加事务
+
+	批量删除运用到动态sql
+	前端传回的非格式化数据可以使用类型格式化器，注册后即可使用，方便进行安全的类型转换
+
+********
+	jQuery发送AJAX
+	$.ajax()
+	$.get()
+
+
+
+******************************************************************************************
+AOT和GraalVM
+
+********
+JIT Just In Time
+	是一种JVM提高执行速度的技术，JVM执行的是Java字节码，并将经常执行的代码编译为本机代码
+	也叫做实时编译JIT
+	当JVM发现某个方法或代码块运行特别频繁时，会将其识别为热点代码 Hot Spot Code
+	热点代码会被编译成本地及其相关的机器码，并加入缓存。以备下次使用。
+	这样就可以提高这类热点方法的执行效率。
+	特点：实时编译
+	缺点：不频繁使用的代码无法提高效率，且需要长时间运行后JIT才会成熟预热。
+	缺点：在程序执行时动态进行编译，需要时间开销与空间开销，见效缓慢。
+
+********
+AOT 是指 Ahead of Time Compilation预编译
+	可以提升Java程序性能，缩短JVM启动事件。
+	在启动虚拟机之前，将Java类编译为本机代码，将缩短大型Java应用程序的启动事件
+	JVM会加载编译后的本机代码
+	即为牺牲整体的JVM的启动时间，提高项目的启动
+	特点：静态的
+	
+SpringBoot3 Spring6 支持AOT技术
+
+Native Image
+	本机镜像，就是一种预先将Java代码与编译成可以独立执行文件的技术，也叫做原生镜像
+	这种镜像技术生成的镜像文件，会比原始的项目文件大得多
+	包括应用程序类，依赖项的类，运行时的库的类，以及来自JDK的静态链接本地代码
+	优点：启动时间短，运行时内存与cpu开销低
+	思路：空间换时间，并将大量编译工作等转移到构建时。也就是将项目要执行的东西都准备好
+
+Native Image Builder
+	镜像构建工具 静态分析
+
+********
+GraalVM
+	是OpenJDK的一种替代方案，支持多语言。例如支持高并发的Go，或者JavaScript的Node,js
+	包含了native image的工具，支持AOT
+	启动速度更快，使用的CPU和内存更少，使用时占用磁盘较小。提高了Java在云原生上的竞争力
+	SpringBoot3中使用GraalVM方案提供Native Image支持
+	多语言虚拟机
+
+	该工具对字节码进行静态分析，会寻找应用程序实际使用的所有代码，并消除所有不必要的东西。
+	native image 是封闭式的静态分析和编译，不支持class的动态加载等方式。
+	程序运行所需要的所有依赖项均在静态分析阶段完成
+
+使用 native image build 生成原生镜像文件
+使用GraalVM虚拟机来执行镜像文件
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
