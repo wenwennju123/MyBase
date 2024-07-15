@@ -1127,7 +1127,7 @@ public class OpenFeignConsumer8080 {
 	psvm
 }
 
-************************
+
 ************************
 推荐：开发时使用 DubboSpringCloud 进行负载均衡（消费者调用生产者api时）
 

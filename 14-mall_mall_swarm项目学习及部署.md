@@ -1,8 +1,13 @@
-——————————————————————————
-——————————————————————————
+思考 升级网关是否需要更换域名来引流
+
+
+
+
+
 核心：老板是做医疗器械在疫情中发家，购买厂房，转型美妆药妆，购买软件服务
 
-P1--SSM单体项目
+# P1--SSM单体项目
+
 企业内部使用
 企业办公效能软件
 
@@ -19,46 +24,61 @@ excel表格读取与生成
 先上传图片，服务器存储了图片后，用图片路径去调用Tesseract-OCR，获得识别结果
 并对识别结果进行特定优化：发票、信息填报单、报销填报等
 
+# P1--电商 + 物流
+
+### 技术选型：
+
+**后端：**SpirngBoot，MyBatis,Elasticsearch,RabbitMQ,Redis,
+
+MongoDB,Nginx,Druid,OSS,MinIO,JWT,SpringSecurityOauth2，Seata
+
+（mall-swarm使用了SpringCloud，SpringCloudAlibaba，Nacos，gateway等）
+
+**插件：**MyBatisGenerator，LogStash，Lombok，Hutool，PageHalper，Swagger-UI
+
+**部署：**Docker，Jenkins，
+
+**前端：**Vue，Element，Vuex，v-charts，Js-cookie
+
+### 开发工具
+
+IDEA，RedisDesktop,Robomongo,SwitchHosts,X-shell,PowerDesigner,PostMan,Navicat
+
+### 开发环境
+
+JDK1.8, MySQL5.7, Redis7.0, MongoDB5.0, RabbitMQ3.10.5, Nginx1.22, Elasticsearch7.17.3, Logstash7.17.3, Kibana7.17.3
+
+## 简介：
+
+**前台：**首页门户、商品推荐、商品搜索、商品展示、购物车、订单流程、会员中心、客户服务、帮助中心等模块
+
+**后台：**商品管理、订单管理、会员管理、促销管理、运营管理、内容管理、统计报表、财务管理、权限管理、设置等模块
+
+**细分：**商品模块：商品管理，商品分类管理、商品类型管理、品牌管理、参数管理等
+
+​		订单模块：订单管理、订单设置、退货申请处理、退货原因设置、
+
+​		营销模块：秒杀活动管理、优惠价管理、品牌推荐、新品推荐、人气推荐、专题推荐、首页广告、
+
+### 电商架构图
+
+### 功能结构图
+
+### 开发进度图
+
+### 问题与思考：
+
+OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
+用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
+轮播广告，商品信息，评论，品牌等如何更新，各类记录如何归档
 
 
 
-——————————————————————————
-——————————————————————————
-P1--电商 + 物流
-技术选型：
-	后端：SpirngBoot,（SpringCloud，SpringCloudAlibaba），MyBatis,Elasticsearch,RabbitMQ,
-		Redis,MongoDB,Nginx,Druid,OSS,MinIO,JWT,SpringSecurityOauth2，Seata
-	插件：MyBatisGenerator，LogStash，Lombok，Hutool，PageHalper，Swagger-UI
-	部署：Docker，Jenkins，
-	前端：Vue，Element，Vuex，v-charts，Js-cookie
-
-开发工具
-	IDEA，RedisDesktop,Robomongo,SwitchHosts,X-shell,PowerDesigner,PostMan,Navicat
-开发环境
-	JDK1.8, MySQL5.7, Redis7.0, MongoDB5.0, RabbitMQ3.10.5, Nginx1.22, Elasticsearch7.17.3, Logstash7.17.3, Kibana7.17.3
-
-简介：
-
-电商架构图
-
-功能结构图
-
-开发进度图
-
-问题与思考：
-	OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
-	用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
-	轮播广告，商品信息，评论，品牌等如何更新，各类记录如何归档
 
 
+### 表设计：
 
-
-
-
-表设计：
-********
-主要表：
-oms_order 电商订单表：
+#### oms_order 电商订单表：
 
 id 订单id UUID 主键 BTREE，member_id 用户账号id 外键，coupon_id 优惠卷id 外键，
 order_sn 订单编号，create_time 提交时间，member_username 用户账号
@@ -80,6 +100,7 @@ use_integration下单使用的积分，payment_time支付时间，delivery_time�
 receive_time确认收货时间，comment_time评价时间，modify_time修改时间
 
 建表： 40+字段
+````mysql
 CREATE TABLE `oms_order`  (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '订单id',
   `member_id` bigint(20) NOT NULL,
@@ -127,12 +148,12 @@ CREATE TABLE `oms_order`  (
   `modify_time` datetime NULL DEFAULT NULL COMMENT '修改时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 77 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '订单表' ROW_FORMAT = DYNAMIC;
+````
 
-
-********
-pms_product 商品信息表：
+#### pms_product 商品信息表：
 
 建表：40+字段
+
 CREATE TABLE `pms_product`  (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,   主键
   `brand_id` bigint(20) NULL DEFAULT NULL,   外键
@@ -179,9 +200,7 @@ CREATE TABLE `pms_product`  (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 46 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '商品信息' ROW_FORMAT = DYNAMIC;
 
-
-********
-ums_member 会员表
+#### ums_member 会员表
 
 建表：
 CREATE TABLE `ums_member`  (
@@ -209,93 +228,90 @@ CREATE TABLE `ums_member`  (
   UNIQUE INDEX `idx_phone`(`phone`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '会员表' ROW_FORMAT = DYNAMIC;
 
+#### 表汇总：
 
-********
-表汇总：
-	cms_help 帮助表
-	cms_help_category 帮助分类表
-	cms_member_report 用户举报表
-	cms_prefrence_area 优选专区
-	cms_prefrence_product_relation 优选专区与商品关系表
-	cms_subject 专题表
-	cms_subject_category 专题分类表
-	cms_subject_comment 专题评论表
-	cms_subject_product_relation 专题与商品关系表
-	cms_topic 话题表
-	cms_topic_category 话题分类表
-	cms_topic_comment 专题评论表
+cms_help 帮助表
+cms_help_category 帮助分类表
+cms_member_report 用户举报表
+cms_prefrence_area 优选专区
+cms_prefrence_product_relation 优选专区与商品关系表
+cms_subject 专题表
+cms_subject_category 专题分类表
+cms_subject_comment 专题评论表
+cms_subject_product_relation 专题与商品关系表
+cms_topic 话题表
+cms_topic_category 话题分类表
+cms_topic_comment 专题评论表
 
-	oms_cart_item 购物车表
-	oms_company_address 公司仓库收发货地址表
-	oms_order 订单表
-	oms_order_item 订单所包含的商品表
-	oms_order_operate_history 订单状态操作历史表
-	oms_order_return_apply 订单退货申请表
-	oms_order_return_reason 订单退货原因表
-	oms_order_setting 订单设置表
+oms_cart_item 购物车表
+oms_company_address 公司仓库收发货地址表
+oms_order 订单表
+oms_order_item 订单所包含的商品表
+oms_order_operate_history 订单状态操作历史表
+oms_order_return_apply 订单退货申请表
+oms_order_return_reason 订单退货原因表
+oms_order_setting 订单设置表
 	
-	pms_album 相册表
-	pms_album_pic 相册图片表
-	pms_brand 品牌表
-	pms_comment 商品评价表
-	pms_comment_apply 商品评价回复表
-	pms_feight_template 运费模板表
-	pms_member_price 商品会员价格表
-	pms_product 商品信息表
-	pms_product_attribute 商品属性参数表
-	pms_product_attribute_category 商品属性分类表
-	pms_product_attribute_value 产品参数信息存储表
-	pms_product_category 产品分类表
-	pms_product_category_attribute_relation 产品分类与产品属性关系表（筛选用）
-	pms_product_full_reduction 产品满减表
-	pms_product_ladder 产品阶梯价格表
-	pms_product_operate_log 产品操作日志表
-	pms_product_vertify_record 商品审核记录表
-	pms_sku_stock 商品sku码库存表
+pms_album 相册表
+pms_album_pic 相册图片表
+pms_brand 品牌表
+pms_comment 商品评价表
+pms_comment_apply 商品评价回复表
+pms_feight_template 运费模板表
+pms_member_price 商品会员价格表
+pms_product 商品信息表
+pms_product_attribute 商品属性参数表
+pms_product_attribute_category 商品属性分类表
+pms_product_attribute_value 产品参数信息存储表
+pms_product_category 产品分类表
+pms_product_category_attribute_relation 产品分类与产品属性关系表（筛选用）
+pms_product_full_reduction 产品满减表
+pms_product_ladder 产品阶梯价格表
+pms_product_operate_log 产品操作日志表
+pms_product_vertify_record 商品审核记录表
+pms_sku_stock 商品sku码库存表
 	
-	sms_coupon 优惠券表
-	sms_coupon_history 优惠券领取使用历史表
-	sms_coupon_product_category_relation 优惠卷与产品分类关系表
-	sms_coupon_product_relation 优惠卷与产品关系表
-	sms_flash_promotion 限时购表
-	sms_flash_promotion_log 限购通知记录表
-	sms_flash_promotion_product_relation 商品限时购与商品关系表
-	sms_flash_promotion_session 限时购场次表
-	sms_home_advertise 首页轮播广告表
-	sms_home_brand 首页推荐品牌表
-	sms_home_new_product 好物上新表
-	sms_home_recommend_product 商品人气推荐表
-	sms_home_recommend_subject 首页专题推荐表
+sms_coupon 优惠券表
+sms_coupon_history 优惠券领取使用历史表
+sms_coupon_product_category_relation 优惠卷与产品分类关系表
+sms_coupon_product_relation 优惠卷与产品关系表
+sms_flash_promotion 限时购表
+sms_flash_promotion_log 限购通知记录表
+sms_flash_promotion_product_relation 商品限时购与商品关系表
+sms_flash_promotion_session 限时购场次表
+sms_home_advertise 首页轮播广告表
+sms_home_brand 首页推荐品牌表
+sms_home_new_product 好物上新表
+sms_home_recommend_product 商品人气推荐表
+sms_home_recommend_subject 首页专题推荐表
 	
-	ums_admin 后台用户表
-	ums_admin_login_log 后台用户登录日志表
-	ums_admin_permission_relation 后台用户与用户权限关系表
-	ums_admin_role_relation 后台用户与用户角色关系表
-	ums_growth_change_history 成长值变化历史记录表
-	ums_integration_change_history 积分变化历史记录表
-	ums_integration_sonsume_setting 积分消费设置表
-	ums_member 会员表
-	ums_member_level 会员等级表
-	ums_member_login_log 会员登录记录表
-	ums_member_member_tag_relation 会员与用户标签关系表
-	ums_member_product_category_relation 会员与产品分类关系表
-	ums_member_receive_address 会员收获地址表
-	ums_member_rule_setting 会员积分成长规则表
-	ums_member_statistics_info 会员统计信息
-	ums_member_tag 用户标签表
-	ums_member_task 会员任务表
-	ums_memu 后台菜单表
-	ums_permission 后台用户权限表
-	ums_resource 后台资源表
-	ums_resource_category 资源分类表
-	ums_role 后台用户角色表
-	ums_role_menu_relation 后台角色与后台菜单关系表
-	ums_role_premission_relation 后台用户角色和用户权限关系表
-	ums_role_resource_relation 后台角色与后台资源关系表
+ums_admin 后台用户表
+ums_admin_login_log 后台用户登录日志表
+ums_admin_permission_relation 后台用户与用户权限关系表
+ums_admin_role_relation 后台用户与用户角色关系表
+ums_growth_change_history 成长值变化历史记录表
+ums_integration_change_history 积分变化历史记录表
+ums_integration_sonsume_setting 积分消费设置表
+ums_member 会员表
+ums_member_level 会员等级表
+ums_member_login_log 会员登录记录表
+ums_member_member_tag_relation 会员与用户标签关系表
+ums_member_product_category_relation 会员与产品分类关系表
+ums_member_receive_address 会员收获地址表
+ums_member_rule_setting 会员积分成长规则表
+ums_member_statistics_info 会员统计信息
+ums_member_tag 用户标签表
+ums_member_task 会员任务表
+ums_memu 后台菜单表
+ums_permission 后台用户权限表
+ums_resource 后台资源表
+ums_resource_category 资源分类表
+ums_role 后台用户角色表
+ums_role_menu_relation 后台角色与后台菜单关系表
+ums_role_premission_relation 后台用户角色和用户权限关系表
+ums_role_resource_relation 后台角色与后台资源关系表
 
 
 共计：80+表
 
-——————————————————————————
-——————————————————————————
-P2--GitHub开源项目  企业级低代码平台JeecgBoot
+# P2--GitHub开源项目  企业级低代码平台JeecgBoot
