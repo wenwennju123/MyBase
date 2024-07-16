@@ -1,8 +1,6 @@
+## 简历编写
 
-
-思考 升级网关是否需要更换域名来引流
-
-
+**思考** 升级网关是否需要更换域名来引流
 
 **环境：**国内新冠 2019年底开始，2020年-2021年封禁最严格 2020年1月南京封禁 2022年初南京基本解除封控，部分偶有局部封控 2023初全国疫情基本全面控制，结束封城
 
@@ -110,7 +108,7 @@ JDK1.8, MySQL5.7, Redis7.0, MongoDB5.0, RabbitMQ3.10.5, Nginx1.22, Elasticsearch
 
 ![mind_sale](E:\mall-main-jpgresource\mind_sale.jpg)
 
-## 架构解析
+## 架构及业务解析
 
 ### **SpringBoot+MyBatis 搭建基本骨架**
 
@@ -253,25 +251,141 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 
 
+### 整合SpringSecurity和JWT实现认证授权
 
 
 
 
 
-
-## 业务解析
-
-### 源码学习分析
-
-#### mall-main模块
+### 整合SpringTask实现定时任务
 
 
+
+
+
+### 整合Elasticsearch实现商品搜索
+
+
+
+
+
+### 整合MongoDB实现文档操作
+
+
+
+
+
+### 整合RabbitMQ实现延迟消息
+
+
+
+
+
+### 整合OSS、MinIO实现文件上传
+
+
+
+
+
+## 源码解析：
+
+### mall父模块
+
+​	引入mall-common、mall-mbg、mall-security子模块
+
+​	均不含SpringBootApplication
+
+​	引入springboot（aop、actuctor、test、configuration）、hutool、lombok、pagehelper、druid、swagger-UI、MyBatisgenerator、mysql-Connector、spirng-data-commons、JWT、aliyun-sdk-oss、logstash、minio
+
+​	定义打包项目时的docker镜像配置
+
+#### mall-common模块
+
+​	**引入**springboot（web、data-redis、validation）、logstash-logback-encoder、spirng-data-commons、springfox-boot-starter
+
+​	**提供：**通用分页数据封装类，将分页查找（PageHelper、SpringData）得到的list中的数据中的分页数据，封装到该分页数据封装类
+
+​			通用返回结果封装类，提供泛型，接收多类型的数据 private T data；根据不同调用方法，返回不同的返回结果封装类CommonResult<T>
+
+​			返回结果常量类ResultCode、提供五种供返回码。
+
+​			配置Redis的基础配置、RedisConfig，配置JSON序列化器，Json转化为对象，缓存有效期
+
+​			配置Swagger的基础配置、SwaggerConfig
+
+​			自定义Swagger配置接口
+
+​			配置logback日志输出
+
+​			Controller层的日志封装类
+
+​			自定义API异常、断言处理类（抛出API异常用的）
+
+​			全局异常处理类，处理自定义的API异常、BindException参数绑定异常
+
+​			统一日志处理切面 WebLogAdpect，切点处理所有模块下的controller，
+
+@Around，获取请求对象，拿到其中需要处理的信息，记录日志，统计方法耗时
+
+​			Redis操作Service接口与实现类
+
+​			获取真实请求IP地址的工具类
+
+#### mall-mbg模块
+
+​			引入父模块、pagehelper、mybatis-generator、mysql-connector
+
+​			专门用来生成mabatis mapper model 映射的
+
+​			配置CommentGenerator类与GeneratorConfig.xml配置文件，调用Generator即可生成
 
 #### mall-security模块
 
+​		不具备SpringBootApplication
+
+​		引入common模块，springboot（web、security、data-redis），jjwt
+
+​		提供
 
 
-### 问题与思考：
+
+
+
+
+
+
+
+### mall-admin模块
+
+​		具备SpringBootApplication
+
+
+
+
+
+### mall-portal模块
+
+​		具备SpringBootApplication
+
+
+
+
+
+
+
+### mall-search模块
+
+​		具备SpringBootApplication
+
+
+
+
+
+
+
+
+
+## 问题与思考：
 
 OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
 用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
@@ -433,7 +547,7 @@ CREATE TABLE `ums_member`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '会员表' ROW_FORMAT = DYNAMIC;
 ````
 
-#### 表汇总：
+### 表汇总：
 
 cms_help 帮助表
 cms_help_category 帮助分类表
@@ -516,6 +630,10 @@ ums_role_menu_relation 后台角色与后台菜单关系表
 ums_role_premission_relation 后台用户角色和用户权限关系表
 ums_role_resource_relation 后台角色与后台资源关系表
 
+### 表结构：
+
+见powerdesigner
+
 
 
 # P1--电商 mall_swarm 升级版
@@ -525,6 +643,20 @@ SpringCloud SpringCloudAlibaba Nacos GateWay
 ## 架构升级
 
 ![mall_micro_service_arch](E:\mall-main-jpgresource\mall_micro_service_arch.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # P2--GitHub开源项目  企业级低代码平台JeecgBoot
 
