@@ -2,6 +2,12 @@
 
 **思考** 升级网关是否需要更换域名来引流
 
+增强了代码的管理意识（git）、代码的规范意识（Alibaba Java开发规范）
+
+增强了配置意识，绝大部分的固定数字，字符串都要以配置文件的形式编写，要么写死为常量，要么读取配置文件以备后续修改。不允许存在”魔法值“
+
+Spring注入规范，尽量使用构造注入，对于Config类中的属性不要直接 @Autowired注入，而是使用@Autowired修饰构造器，并定义属性为final。也不推荐set注入
+
 **环境：**国内新冠 2019年底开始，2020年-2021年封禁最严格 2020年1月南京封禁 2022年初南京基本解除封控，部分偶有局部封控 2023初全国疫情基本全面控制，结束封城
 
 封控区，管控区
@@ -53,6 +59,34 @@ excel表格读取与生成
 **部署：**Docker，Jenkins  **监控：**LogStash，Kibana
 
 **前端：**Vue，Element，Vuex，v-charts，Js-cookie  次要可不写
+
+#### 选的技术用在了哪里：
+
+​		Springboot + MyBatis 搭建项目基础架构
+
+​		Redis 处理 Service，RedisService
+
+​		JWT，SpringSecutiry  安全验证 JWT的生成，校验，过期时间，刷新
+
+```Java
+//根据claims生成token        
+return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(generateExpirationDate())
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+//从token中获取claims以便读取用户名、过期时间等信息
+claims = Jwts.parser()
+        .setSigningKey(secret)
+        .parseClaimsJws(token)
+        .getBody();
+```
+
+​		工具方法中，方法的可见等级，对外的只有关键几个public方法，在public方法中调用自己的private protected方法，提高安全性
+
+​		Swagger-UI 生成在线api文档，注解修饰controller方法
+
+​		HuTool StrUtil.isEmpty() 验证非空字符串
 
 ### 开发工具
 
@@ -345,9 +379,19 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ​		引入common模块，springboot（web、security、data-redis），jjwt
 
-​		提供
+​		提供JwtTokenUtil，提供token的生成、校验以及从token中获取信息并校验的功能
 
+​		提供SpringUtil，从SpringApplicationContextSpring，应用上下文中获取执行name和clazz的Bean
 
+​		提供RedisCacheAdpect，为需要redis接入缓存的service提供自定义的切面，
+
+防止Redis缓存宕机影响到正常业务逻辑。切点为 service.*CacheService.*(..)，即所有名字后缀为CacheService的service方法都被增强
+
+并设置 doAround() 增强，执行方法，捕获异常有@CacheException修饰的方法要抛出缓存异常，没有的记录日志
+
+​		提供CacheException自定义注解，用于AOP手动抛出异常，
+
+​		配置SpringSecurity，SpringSecurityFilterChain。
 
 
 
