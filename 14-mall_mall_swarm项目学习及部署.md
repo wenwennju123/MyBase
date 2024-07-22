@@ -24,6 +24,8 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 
 规范化注解，提高效率的同时减少配合的失误。规范的思想
 
+工作流 确认需求---表设计powerdesigner---生成sql脚本---生成表---mybatisgenerator生成实体类model、mapper、xml、以及工具方法类Example---前端需求---controller----service---调用mapper方法
+
 
 
 
@@ -409,6 +411,12 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ​			配置CommentGenerator类与GeneratorConfig.xml配置文件，调用Generator即可生成
 
+​			提供所有表对应的 xml文件，mapper接口，Example工具方法类， 以及 moddel实体类。
+
+​			Mapper 提供基础的（主键）增删改查方法和定制（Example）方法 ，
+
+​			Example类 中根据每个字段的查询以及模糊查询 使用内部维护的Criteria 对xml文件中的sql语句进行增补。
+
 #### mall-security模块
 
 ​		不具备SpringBootApplication
@@ -491,7 +499,7 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ​	控制层提供Cms、Oms、Pms、Sms、Ums所需业务的Controller、与service一一对应，共31个controller
 
-​	参数配置信息，数据封装，数据展示，操作返回结果 等所需要的Dto，包含 Dto、Param、Result、Item、Detail等，共29个Dto
+​	参数信息，数据封装，数据展示，操作返回结果 等所需要的Dto，包含 Dto、Param、Result、Item、Detail等，共29个Dto
 
 **Config配置：**	Cors全局跨域配置、mall-security模块相关配置、MyBatis相关配置、Oss配置、Swagger配置
 
@@ -508,6 +516,8 @@ Uri:  /prefrenceArea/listAll
 //用于获取所有商品优选List。并将结果封装到CommonResult.success(data)中返回。
 ```
 
+​		Service：调用mapper，listAll
+
 ​		**CmsSubjectController：** 商品专题管理
 
 ```java
@@ -519,6 +529,8 @@ Uri:  /subject/list
      @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize)
 //根据专题名称分页获取商品专题
 ```
+
+​		Service：调用mapper，listAll查全部；list 用pageHepler分页查询，模糊查询
 
 ​		**MinioController：** MinIO对象存储管理
 
@@ -543,6 +555,246 @@ Uri:  /minio/delete
 Uri:  /companyAddress/list
 //获取所有收获地址
 ```
+
+​		**OmsOrderController：** 订单管理
+
+```java
+Uri:  /order/list
+    (OmsOrderQueryParam queryParam,
+     @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize,
+     @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum)
+//分页查询订单
+    
+Uri:  /order/update/delivery
+    (@RequestBody List<OmsOrderDeliveryParam> deliveryParamList)
+//批量发货
+    
+Uri:  /order/update/close
+    (@RequestParam("ids") List<Long> ids, @RequestParam String note)
+//批量关闭订单
+    
+Uri:  /order/delete    
+    (@RequestParam("ids") List<Long> ids)
+//批量删除
+    
+Uri:  /order/{id}
+	(@PathVariable Long id)
+//根据id获取订单详情：订单信息，商品信息，操作记录
+
+Uri:  /order/update/receiverInfo
+    (@RequestBody OmsReceiverInfoParam receiverInfoParam)
+//修改收货人信息
+
+Uri:  /order/update/moneInfo
+    (@RequestBody OmsMoneyInfoParam moneyInfoParam)
+//修改订单费用信息
+    
+Uri:  /order/update/note
+    (@RequestParam("id") Long id,
+     @RequestParam("note") String note,
+     @RequestParam("status") Integer status)
+//修改订单信息
+```
+
+​		**OmsOrderReturnApplyController：** 订单退货管理
+
+```java
+Uri:  /returnApply/list
+    (OmsReturnApplyQueryParam queryParam,
+     @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize,
+     @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum)
+//分页查询退货申请
+    
+Uri:  /returnApply/{id}
+	(@PathVariable Long id)
+//获取退货申请详情
+
+Uri:  /delete
+    (@RequestParam("ids") List<Long> ids)
+//批量删除退货申请
+
+Uri:  /update/status/{id}
+	(@PathVariable Long id, @RequestBody OmsUpdateStatusParam statusParam)
+//修改退货申请状态
+```
+
+​		**OmsOrderReturnReasonController：** 退货原因管理
+
+```java
+@RequestMapping("/returnReason")
+
+    @ApiOperation("添加退货原因")
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult create(@RequestBody OmsOrderReturnReason returnReason) {}
+
+    @ApiOperation("修改退货原因")
+    @RequestMapping(value = "/update/{id}", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult update(@PathVariable Long id, @RequestBody OmsOrderReturnReason returnReason) {}
+
+    @ApiOperation("批量删除退货原因")
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult delete(@RequestParam("ids") List<Long> ids) {}
+
+    @ApiOperation("分页查询退货原因")
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @ResponseBody
+    public CommonResult<CommonPage<OmsOrderReturnReason>> list(@RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize,@RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum) {}
+        
+    @ApiOperation("获取单个退货原因详情信息")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @ResponseBody
+    public CommonResult<OmsOrderReturnReason> getItem(@PathVariable Long id) {}
+
+    @ApiOperation("修改退货原因启用状态")
+    @RequestMapping(value = "/update/status", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult updateStatus(@RequestParam(value = "status") Integer status,
+                                     @RequestParam("ids") List<Long> ids) {}
+```
+
+订单设置管理
+
+Oss文件上传管理
+
+​	配置oss基础信息，生成ossClient，配置存储目录、文件大小、回调、oss提交节点、签名生成、返回结果
+
+商品品牌管理
+
+商品属性分类管理
+
+商品属性管理
+
+​	举例：新增/删除商品属性后，需要一同更新与其管理那的表 商品属性分类表 中的 数量 字段
+
+​	在同一个Service方法中，对两个mapper进行操作，可以添加事务保证两次操作的一致性
+
+商品分类管理
+
+​	批量插入方法，维护一个List，将传入的List集合中的数据遍历写入，在调用insertList方法来批量插入
+
+​	根据实际业务关系决定，一张表中的某个字段更新时，与其相关联的表中的对应字段也需要一同更新
+
+​	注意：操作mapper的service方法，与执行 复杂 或 可提取公用的 业务逻辑处理数据的方法建议分开，调用即可。
+
+**商品管理**
+
+​	相关联很的表，这个service引入了8个mapper。对于表关系的建立、更新可以单独封装方法（可以使用反射机制获取方法名来增加泛用性）。
+
+​	复数参数条件查询，根据传入的条件添加不同的criteria追加条件，追加到sql语句上。
+
+```java
+    @Override
+    public List<PmsProduct> list(PmsProductQueryParam productQueryParam, Integer pageSize, Integer pageNum) {
+        PageHelper.startPage(pageNum, pageSize);
+        PmsProductExample productExample = new PmsProductExample();
+        PmsProductExample.Criteria criteria = productExample.createCriteria();
+        criteria.andDeleteStatusEqualTo(0);
+        if (productQueryParam.getPublishStatus() != null) {
+            criteria.andPublishStatusEqualTo(productQueryParam.getPublishStatus());
+        }
+        if (productQueryParam.getVerifyStatus() != null) {
+            criteria.andVerifyStatusEqualTo(productQueryParam.getVerifyStatus());
+        }
+        if (!StrUtil.isEmpty(productQueryParam.getKeyword())) {
+            criteria.andNameLike("%" + productQueryParam.getKeyword() + "%");
+        }
+        if (!StrUtil.isEmpty(productQueryParam.getProductSn())) {
+            criteria.andProductSnEqualTo(productQueryParam.getProductSn());
+        }
+        if (productQueryParam.getBrandId() != null) {
+            criteria.andBrandIdEqualTo(productQueryParam.getBrandId());
+        }
+        if (productQueryParam.getProductCategoryId() != null) {
+            criteria.andProductCategoryIdEqualTo(productQueryParam.getProductCategoryId());
+        }
+        return productMapper.selectByExample(productExample);
+    }
+```
+
+模糊查询
+
+```java
+    @Override
+    public List<PmsProduct> list(String keyword) {
+        PmsProductExample productExample = new PmsProductExample();
+        PmsProductExample.Criteria criteria = productExample.createCriteria();
+        criteria.andDeleteStatusEqualTo(0);
+        if(!StrUtil.isEmpty(keyword)){
+            criteria.andNameLike("%" + keyword + "%");
+            productExample.or().andDeleteStatusEqualTo(0).andProductSnLike("%" + keyword + "%");
+        }
+        return productMapper.selectByExample(productExample);
+    }
+```
+
+建立和插入关系表操作方法封装
+
+```java
+	/**
+     * 建立和插入关系表操作
+     *
+     * @param dao       可以操作的dao
+     * @param dataList  要插入的数据
+     * @param productId 建立关系的id
+     */
+    private void relateAndInsertList(Object dao, List dataList, Long productId) {
+        try {
+            if (CollectionUtils.isEmpty(dataList)) {
+                return;
+            }
+            for (Object item : dataList) {
+                //反射拿到 setId 方法和 setProductId方法，并执行
+                Method setId = item.getClass().getMethod("setId", Long.class);
+                setId.invoke(item, (Long) null);
+                Method setProductId = item.getClass().getMethod("setProductId", Long.class);
+                setProductId.invoke(item, productId);
+            }
+            //反射拿到insertList方法
+            Method insertList = dao.getClass().getMethod("insertList", List.class);
+            insertList.invoke(dao, dataList);
+        } catch (Exception e) {
+            LOGGER.warn("创建商品出错:{}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+```
+
+商品SKU库存管理
+
+优惠卷管理
+
+优惠卷领取记录管理
+
+限时购活动管理
+
+限时购和商品关系管理
+
+限时购场次管理
+
+首页轮播广告管理
+
+首页品牌推荐管理
+
+首页新品管理
+
+首页人气推荐管理
+
+首页专题推荐管理
+
+后台用户管理
+
+会员等级管理
+
+后台菜单管理
+
+后台资源分类管理
+
+后台资源管理
+
+后台用户角色管理
 
 
 
