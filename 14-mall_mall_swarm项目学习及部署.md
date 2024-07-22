@@ -6,11 +6,27 @@
 
 2022年时，上海的机动车保有量就已经突破500万辆
 
-增强了代码的管理意识（git）、代码的规范意识（Alibaba Java开发规范）
+
+
+增强了代码的管理意识（git）
+
+增强了代码的规范意识（Alibaba Java开发规范）方法的权限修饰，异常的抛出
 
 增强了配置意识，绝大部分的固定数字，字符串都要以配置文件的形式编写，要么写死为常量，要么读取配置文件以备后续修改。不允许存在”魔法值“
 
 Spring注入规范，尽量使用构造注入，对于Config类中的属性不要直接 @Autowired注入，而是使用@Autowired修饰构造器，并定义属性为final。也不推荐set注入
+
+提取通用工具类，值，增强复用性
+
+工具类的使用，泛型的使用，
+
+通过方法重载，传入不同参数的形式，提高利用率，例如返回成功结果，返回失败结果
+
+规范化注解，提高效率的同时减少配合的失误。规范的思想
+
+
+
+
 
 缓存 双写，延迟双删
 
@@ -18,7 +34,7 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 
 压力测试
 
-数据扩容
+数据，服务扩容
 
 数据迁移
 
@@ -104,7 +120,7 @@ claims = Jwts.parser()
 
 ​		Swagger-UI 生成在线api文档，注解修饰controller方法
 
-​		HuTool工具包：StrUtil.isEmpty() 验证非空字符串、字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等
+​		HuTool工具包：StrUtil.isEmpty() 验证非空字符串、CollUtil.isEmpty 集合工具类验证非空，字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等
 
 对于字符串脱敏，是在json数据序列化时，也可以在这时自定义json的脱敏序列化类，来处理需要脱敏的字符串，判断原字段上是否有特定注解，有就加以脱敏处理、执行对应的脱敏逻辑
 
@@ -411,17 +427,124 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ​		提供CacheException自定义注解，用于AOP手动抛出异常，
 
-​		配置SpringSecurity，SpringSecurityFilterChain。
+​		配置SpringSecurity，包括CommonSecurityConfig，加载配置了通用Bean（包括要用到的JwtTokenUtil），Security通用Bean以及动态权限通用Bean（也就是下述中需要注入的，有 @Bean加载了Component，后面才能 @Autowired注入）。
 
+配置SecurityFilterChain。
 
+​	配置放行url，IgnoreUrlsConfig，配置放行白名单的资源路径，框架会从该路径下读取放行url，通常指定在配置文件中
 
+````java
+@ConfigurationProperties(prefix = "secure.ignored")
+````
 
+​	允许跨域请求的OPTIONS请求，默认全部请求都需要身份认证，关闭跨站请求防护以及不使用session。
 
+​	自定义权限拒绝处理类restfulAccessDeniedHandler。用来返回 **没有权限访问** 的情况下的返回结果。
 
+````java
+        //指定是 权限验证-无权访问-的返回结果
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        //不使用缓存
+        response.setHeader("Cache-Control","no-cache");
+        //配置返回的类型 json
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
+        //返回JSON，结果是 CommonResult.forbidden, 403forbidden
+        response.getWriter().println(JSONUtil.parse(CommonResult.forbidden(e.getMessage())));
+        //PrintWriter IO流 最后要flush下
+        response.getWriter().flush();
+````
+
+​	自定义权限拒绝处理类restAuthenticationEntryPoint，
+
+```java
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Cache-Control","no-cache");
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
+        //返回JSON，结果是 CommonResult.unauthorized, 401已过期
+        response.getWriter().println(JSONUtil.parse(CommonResult.unauthorized(authException.getMessage())));
+        response.getWriter().flush();
+```
+
+​	自定义权限拦截器JWT过滤器**JwtAuthenticationTokenFilter**。从userDetailService中获取用户信息，在引入JwtTokenUtil将用户信息封装，并对用户信息进行验证。验证成功则添加安全认证信息到安全上下文SecurityContext中。该过滤器用来处理 收到一个带有JWT的请求时，校验用户名，成功则创建认证对象并设置到安全上下文中。
+
+​	有动态权限配置时，添加动态权限校验过滤器 **DynamicSecurityFilter** extends AbstractSecurityInterceptor implements Filter。用来实现基于路径的动态权限过滤。首先配置放行OPTIONS请求与白名单中的请求。然后调用AccessDecisionManager中的decide方法进行鉴权操作。当接口未被配置资源时直接放行，有资源则将 **访问所需资源** 与 **用户拥有资源** 进行比对，成功则放行，失败则throw new AccessDeniedException("抱歉，您没有访问权限");
+
+​	这些自定义配置以component类的形式来编写，定义了具体的内容。
 
 ### mall-admin模块
 
 ​		具备SpringBootApplication
+
+​		引入 mall-mbg模块，mall-security模块，oss云存储和minio。
+
+**配置：**application.yml     指定开发环境dev，servlet开启文件上传，限制为10MB，配置my-batis的mapper路径，jwt的基础配置请求头、密钥、超时时间。redis的基础配置，key和超时时间。security的白名单，阿里云oss的对外访问域名，身份验证，存储空间，单次文件上传大小，路径前缀，以及成功过后的回调地址。
+
+​		application-dev.yml   开发时用到的数据源单独配置，mybatis的数据源配置，druid连接池，redis，minio，以及日志logging，logstash
+
+​		application-prop.yml   生产环境配置，依照自己的环境替换即可，在上述中进行切换。
+
+**提供：** Cms、Oms、Pms、Sms、Ums、在内的22个表的 Dao.xml 和对应的 Dao 实体类
+
+​	业务层提供Cms、Oms、Pms、Sms、Ums处理所需要的Service接口与实现类，共31个service
+
+​	控制层提供Cms、Oms、Pms、Sms、Ums所需业务的Controller、与service一一对应，共31个controller
+
+​	参数配置信息，数据封装，数据展示，操作返回结果 等所需要的Dto，包含 Dto、Param、Result、Item、Detail等，共29个Dto
+
+**Config配置：**	Cors全局跨域配置、mall-security模块相关配置、MyBatis相关配置、Oss配置、Swagger配置
+
+​		和鉴权所需的用户信息封装类 AdminUserDetails
+
+**校验器Validator：** 提供状态约束校验器来验证状态是否在指定范围内
+
+**业务逻辑：**  （该包下所有controller方法均被AOP切，WebLog的doAround()，功能：统计执行时间，记录webLog并格式化为JSON记录到LOGGER中，具备 @ApiOperation注解修饰的controller方法额外添加记录供Swagger使用）
+
+​		**CmsPrefrenceAreaController：** 商品优选管理
+
+```java
+Uri:  /prefrenceArea/listAll
+//用于获取所有商品优选List。并将结果封装到CommonResult.success(data)中返回。
+```
+
+​		**CmsSubjectController：** 商品专题管理
+
+```java
+Uri:  /subject/listAll
+//获取全部商品专题
+Uri:  /subject/list
+    (@RequestParam(value = "keyword", required = false) String keyword,
+     @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
+     @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize)
+//根据专题名称分页获取商品专题
+```
+
+​		**MinioController：** MinIO对象存储管理
+
+```java
+Uri:  /minio/upload
+    (@RequestPart("file") MultipartFile file)
+//接收文件上传。下述所有操作均使用try-catch包裹
+//首先从配置文件中读取minio配置信息并创建一个MinIo的Java客户端，并创建储存桶并设置只读权限(该类中提供的方法createBucketPolicyConfigDto)
+//然后根据前端传的文件file，获取文件名并拼接当前日期。
+//使用putObject将该文件上传到上述的储存桶中，
+//若上传成功，则将成功信息封装到minioUploadDto中返回CommonResult.success
+//若失败则打印异常信息，返回CommonResult.failed
+    
+Uri:  /minio/delete
+    (@RequestParam("objectName") String objectName)
+//删除对应文件名的文件，注意，这里传入的文件名是上面储存文件时，经过拼接日期和格式化后的文件名
+```
+
+​		**OmsCompanyAddressController：** 收货地址管理
+
+```java
+Uri:  /companyAddress/list
+//获取所有收获地址
+```
+
+
 
 
 
