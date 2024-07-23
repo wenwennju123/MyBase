@@ -24,6 +24,8 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 
 规范化注解，提高效率的同时减少配合的失误。规范的思想
 
+常量的使用，自定义代码去生成批量代码，例如延迟毫秒数，从100到50000，每隔200ms生成一个常量。
+
 工作流 确认需求---表设计powerdesigner---生成sql脚本---生成表---mybatisgenerator生成实体类model、mapper、xml、以及工具方法类Example---前端需求---controller----service---调用mapper方法
 
 
@@ -122,9 +124,15 @@ claims = Jwts.parser()
 
 ​		Swagger-UI 生成在线api文档，注解修饰controller方法
 
-​		HuTool工具包：StrUtil.isEmpty() 验证非空字符串、CollUtil.isEmpty 集合工具类验证非空，字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等
+​		HuTool工具包：
 
-对于字符串脱敏，是在json数据序列化时，也可以在这时自定义json的脱敏序列化类，来处理需要脱敏的字符串，判断原字段上是否有特定注解，有就加以脱敏处理、执行对应的脱敏逻辑
+​				StrUtil.isEmpty() 验证非空字符串、
+
+​				CollUtil.isEmpty 集合工具类验证非空，
+
+​				BeanUtils.copyProperties(
+
+​				字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等。对于字符串脱敏，是在json数据序列化时，也可以在这时自定义json的脱敏序列化类，来处理需要脱敏的字符串，判断原字段上是否有特定注解，有就加以脱敏处理、执行对应的脱敏逻辑
 
 ### 开发工具
 
@@ -481,7 +489,7 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ​	这些自定义配置以component类的形式来编写，定义了具体的内容。
 
-### mall-admin模块
+### mall-admin模块----CRUD
 
 ​		具备SpringBootApplication
 
@@ -714,7 +722,7 @@ Oss文件上传管理
     }
 ```
 
-模糊查询
+​		模糊查询
 
 ```java
     @Override
@@ -730,7 +738,7 @@ Oss文件上传管理
     }
 ```
 
-建立和插入关系表操作方法封装
+​		建立和插入关系表操作方法封装
 
 ```java
 	/**
@@ -776,19 +784,55 @@ Oss文件上传管理
 
 首页轮播广告管理
 
+​	都是由后台管理人员手动添加的
+
 首页品牌推荐管理
 
-首页新品管理
+​	都是由后台管理人员手动添加的
+
+首页新品推荐管理
+
+​	都是由后台管理人员手动添加的
 
 首页人气推荐管理
 
+​	都是由后台管理人员手动添加的
+
 首页专题推荐管理
 
-后台用户管理
+​	都是由后台管理人员手动添加的
+
+后台用户缓存管理
+
+​	注入了 RedisService 和 后台用户管理Service。
+
+​	对应的方法，拼接响应的key
+
+​	**注意：**，使用的是redis，效率极高。字符串拼接不可以使用String 的 + 运算符。
+
+​	使用**StringBuilder** **线程不安全（同步的），效率较高（首选）** 或者**StringBuffer** 线程安全，效率较低
+
+​	提供了一些删除缓存del以及获取get以及写入set的方法
+
+后台用户管理。注意方法的访问权限，对外的public，内部处理数据的private
+
+​	**注意：**用户的详细信息（年龄，身份证，头像、VIP、积分等等）与用户的登录信息（用户名、密码、token令牌）应该分开
+
+​	注入了JwtTokenUtil。
+
+​	根据用户名获取用户：先查缓存，没有则查数据库，查到了之后将数据库中的数据存入缓存。
+
+​	用户注册：先检查是否有同名用户，没有则允许注册，并将密码加密，存入数据库。
+
+​	用户使用用户名和密码登录：用户名，密码校验通过则登陆成功，生成token并记录日志，返回token。
+
+​	前端用户输入密码后，由前端加密后发给后端。后端接收后不要解密直接校验。因为后端存着的也是同样规则加密后的密码。
 
 会员等级管理
 
 后台菜单管理
+
+​	转化为属性节点，stream流式编程，给定父节点，filter找到子节点
 
 后台资源分类管理
 
@@ -798,13 +842,222 @@ Oss文件上传管理
 
 
 
-
-
-
-
-### mall-portal模块
+### mall-portal模块----业务核心
 
 ​		具备SpringBootApplication
+
+​		引入mall-mbg模块，mall-security模块，引入mongodb、redis、amqp消息队列，引入支付宝支付Java SDK
+
+​		配置application.yml 指定开发环境为dev，配置security白名单，自定义redis key，配置通过数据库来插入mongo、定义消息队列rabbitmq
+
+​		配置application-dev.yml 指定环境，接口8085，mysql数据源，druid连接池配置，mongodb数据源，redis数据源，rabbitmq属性。logging和logstash，alipay的链接及密钥。
+
+​		工具类 DateUtil，专门用来获取格式化的时间Date。
+
+​	**component组件**： 
+
+​		CancelOrderReceiver  取消订单消息的接收者，引入rabbitmq。 
+
+```java
+@Component
+//指定该类为RabbitMQ的监听器，指定队列名 mall.order.cancel
+//作用是 取消订单 消息的 接收者
+@RabbitListener(queues = "mall.order.cancel")
+public class CancelOrderReceiver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CancelOrderReceiver.class);
+    @Autowired
+    private OmsPortalOrderService portalOrderService;
+    
+    //指定rabbitmq的处理器方法
+    @RabbitHandler
+    public void handle(Long orderId){
+        //接受消息，放入队列
+        portalOrderService.cancelOrder(orderId);
+        LOGGER.info("process orderId:{}",orderId);
+    }
+}
+```
+
+​		CancelOrderSender 取消订单信息的发送者
+
+```java
+@Component
+public class CancelOrderSender {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CancelOrderSender.class);
+    //操作消息的AmqpTemplate
+    @Autowired
+    private AmqpTemplate amqpTemplate;
+	//传入 orderId，延迟毫秒数
+    public void sendMessage(Long orderId, final long delayTimes){
+        //给延迟队列发送消息
+        amqpTemplate.convertAndSend(QueueEnum.QUEUE_TTL_ORDER_CANCEL.getExchange(), 															 QueueEnum.QUEUE_TTL_ORDER_CANCEL.getRouteKey(), 
+                                    orderId,
+                                    new MessagePostProcessor() {
+            //内部类     可以改写为 lambda                       
+            @Override
+            public Message postProcessMessage(Message message) throws AmqpException {
+                //给消息设置延迟毫秒值
+                message.getMessageProperties().setExpiration(String.valueOf(delayTimes));
+                return message;
+            }
+        });
+        LOGGER.info("send orderId:{}",orderId);
+    }
+}
+```
+
+​		OrderTimeOutCancelTask  取消超时订单并解锁库存的定时器
+
+```java
+@Component
+public class OrderTimeOutCancelTask {
+    private final Logger LOGGER = LoggerFactory.getLogger(OrderTimeOutCancelTask.class);
+    @Autowired
+    private OmsPortalOrderService portalOrderService;
+    /**
+     * cron表达式：Seconds Minutes Hours DayOfMonth Month DayOfWeek [Year]
+     * 每10分钟扫描一次，扫描超时未支付订单，进行取消操作
+     */
+    @Scheduled(cron = "0 0/10 * ? * ?")
+    private void cancelTimeOutOrder(){
+        Integer count = portalOrderService.cancelTimeOutOrder();
+        LOGGER.info("取消订单，并根据sku编号释放锁定库存，取消订单数量：{}",count);
+    }
+}
+```
+
+​	**Config配置：**  
+
+​		@Component
+
+​		@ConfigurationProperties(prefix = "   ")    读取配置文件。剩余部分不变的可以写死在代码中。
+
+​		@Configuration 或者
+
+​		支付宝请求客户端配置
+
+​		支付宝支付配置
+
+​		全局跨域配置
+
+​		Jackson配置
+
+​		mall-security 模块相关配置
+
+​		MyBatis相关配置
+
+​		RabbitMQ消息队列配置：配置所有的延迟队列，以及所绑定的交换机
+
+​		SpringTask定时任务配置
+
+​		Swagger配置
+
+​	**Domain：**实体类	
+
+​		*支付宝支付请求参数*
+
+​		*购物车中带规格和**SKU**的商品信息*
+
+​		*购物车中促销信息的封装*
+
+​		*订单确认单 信息封装*
+
+​		*秒杀信息和商品对象封装*
+
+​		*首页内容返回信息封装*
+
+​		*首页秒杀场次信息封装*
+
+​		*会员品牌关注*：MongoDB文档
+
+```java
+@Getter
+@Setter
+//将该类标记为mongodb的文档，该类将在MongoDB中映射到该集合，不指定集合名则类名作为集合名。
+@Document
+public class MemberBrandAttention {
+    //指定该文档的唯一标识字段，即主键字段
+    @Id
+    private String id;
+    //在该字段上建立索引，参数unique可以指定是否是唯一索引，参数name可以指定索引名称，默认为字段名。
+    @Indexed
+    private Long memberId;
+    private String memberNickname;
+    private String memberIcon;
+	//在该字段上建立索引
+    @Indexed
+    private Long brandId;
+    private String brandName;
+    private String brandLogo;
+    private String brandCity;
+    private Date createTime;
+}
+
+```
+
+​		*SpringSecurity**需要的用户信息封装类*
+
+​		*会员商品收藏*：MongoDB文档
+
+​		*会员商品浏览历史记录*：MongoDB文档
+
+​		*包含商品信息的订单详情*
+
+​		*退货申请请求参数封装类*
+
+​		*生成订单时传入的参数*
+
+​		*前台商品详情*
+
+​		*包含子分类的商品分类*
+
+​		*促销商品信息封装类，包括**sku**、打折优惠、满减优惠*
+
+​		*消息队列枚举类*
+
+​		*优惠券领取历史详情，包括优惠券信息 ，优惠卷管理商品，和优惠卷关联商品分类*
+
+​	**Repository：**操作MongoDB文档
+
+​		*会员品牌关注**Repository* ：MongoDB的mapper，提供基本的查找方法与删除方法
+
+​		*会员商品收藏**Repository*
+
+​		*会员商品浏览历史**Repository*
+
+​	**Controller：**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+​	**Service：**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
