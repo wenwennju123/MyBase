@@ -1230,9 +1230,25 @@ ES查询可以指定 名字，关键字，以及查询权重、排序方式、�
 
 ## 部署：
 
+服务端口：
 
+​	MallAdmin：8080
 
+​	MallPortal：8085
 
+​	MallSearch：8081
+
+MySQL：3306
+
+MinIO：9000
+
+MongoDB：27017
+
+Redis：6379
+
+RabbitMQ：5672
+
+Elasticsearch：9200
 
 
 
