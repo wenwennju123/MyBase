@@ -28,6 +28,28 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 
 工作流 确认需求---表设计powerdesigner---生成sql脚本---生成表---mybatisgenerator生成实体类model、mapper、xml、以及工具方法类Example---前端需求---controller----service---调用mapper方法
 
+命名的规范性
+
+​	方法名一定要见名知意，根据A查找B，A和B一定要体现在方法名上，并且注解要标识详细哪 个表，哪个字段，关联关系等。
+
+sql的严谨性：
+
+​	严禁使用select * 
+
+​	例如获取接下来的场次，1-5场显示。原先做法是全部查出来，List接收，根据传的参数，从List中取响应。改为直接sql Limit查部分即可。
+
+生成订单Order的牵扯的类，字段太多，要赋值的很多，用户频繁选择大量商品并生成订单，取消订单，带来了比较大的服务器计算压力
+
+用户的行为检测，请求防抖都是绑定该用户的userId的，
+
+​	防抖方面：比如前端按钮灰个2s，后端限制个10s。使用redis维护该userId并添加对应的key并设置超时时间，比如10s限制一次。不可重复提交。在拦截器中实现。
+
+​	用户行为记录：维护一个值，如果用户一直触发防抖等违规操作，就 记录负分，达到一定值，写入数据库，更新用户画像并进行其他操作。加入黑名单了后，用户的一些请求操作的controller中就可以使用黑名单的service判断该用户是否在黑名单中，进而进行下一步决策。
+
+定时任务维护ES商品查询。
+
+
+
 
 
 
@@ -65,6 +87,10 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 物流--冷链（有储存要求的：药品针剂，一次性器械）
 
 快递--天天、顺丰
+
+**后来：**零售业务整个砍掉，变为仓储租赁，原有的只保留医疗器械生产及配送
+
+**发展方向：**平台--整合生产资源和商家和渠道----失败
 
 # P1--SSM单体项目
 
@@ -1025,49 +1051,184 @@ public class MemberBrandAttention {
 
 ​		*会员商品浏览历史**Repository*
 
-​	**Controller：**
+​	**Controller：**共计13个
 
+​		*支付宝支付管理*：提供支付宝支付相关的接口：网站支付，手机支付，异步回调查看支付结果，线下交易查询。
 
+​		*首页内容管理*：首页内容信息展示、分页获取推荐商品、获取首页商品分类、依据分类来分页获取专题推荐商品、分页获取人气推荐商品、分页获取新品推荐商品。
 
+​		*会员关注品牌管理*：添加品牌关注、取消品牌关注、分页查询当前用户的品牌关注列表、根据品牌ID获取品牌被关注的详情、清空当前用户品牌关注列表。
 
+​		*会员商品收藏管理*：添加、删除商品收藏；显示、清空当前用户商品收藏列表、显示商品收藏详情。
 
+​		*会员商品浏览记录管理*：创建、删除、清空、分页获取浏览记录
 
+​		*购物车管理*：添加商品到购物车、获取当前会员的购物车列表、获取当前会员包括促销信息的购物车列表、修改购物车中选定商品的数量、获取购物车中指定商品的规格（用于重选规格）、修改购物车中商品的规格、删除购物车中的指定商品、清空当前会员的购物车。
 
+​		*订单管理*：根据购物车信息生成确认单、根据购物车信息生成订单、用户支付成功回调、自动取消超时订单、取消单个超时订单、按照订单状态分页获取用户订单列表、根据ID获取订单详情、用户取消订单、用户确认收获、用户删除订单。
 
+​		*退货申请管理*：用户申请退货
 
+​		*首页品牌推荐管理*：分页获取推荐品牌、获取品牌详情、分页获取品牌相关商品。
 
+​		*前台商品管理*：综合搜索与筛选与排序、以属性结构获取所有商品分类、获取前台商品详情
 
+​		*会员管理*：会员注册、会员登录、获取会员信息、获取验证码、会员修改密码、刷新token、
 
+​		*会员优惠券管理*：领取指定优惠券、获取会员优惠卷领取历史列表、获取会员持有优惠卷列表、获取登陆会员购物车中商品的相关优惠卷、获取当前商品相关优惠卷。
 
+​		*会员收货地址管理*：添加、删除、修改收货地址、获取所有收获地址、获取收货地址详情
 
+#### **Service：**业务核心实现 15个
 
+​	*支付宝支付**Service**实现类*
 
+​		pay方法，读取异步接收地址与同步跳转地址并赋值给阿里支付请求对象。传入唯一订单号、支付金额、订单标题、支付场景固定值（电脑还是手机）
 
-​	**Service：**
+​	*首页内容管理**Service**实现类*
 
+​		调用了其他六个mapper
 
+​	*会员关注**Service**实现类*、*会员收藏**Service**实现类*、*会员浏览记录管理**Service**实现类*
 
+​		直接操作对应的MongoDB   提供基础的 增删改查 以及 查全部 方法。
 
+​	*购物车管理**Service**实现类*
 
+​	*订单退货管理**Service**实现类*
 
+​	**前台订单管理Service实现类：**调用了5个service和6个mapper和3个Dao
 
+​	***促销管理Service实现类***
 
+​	*前台品牌管理**Service**实现类*
 
+​	*前台订单管理**Service**实现类*
 
+​	*UmsMemberCacheService**实现类*  操作redis 提供基础的 del set get 方法
 
+​	***会员优惠券管理Service实现类***
 
+​	*用户地址管理**Service**实现类*
 
-
-
-
-
-
+​	***会员管理Service实现类***
 
 
 
 ### mall-search模块
 
 ​		具备SpringBootApplication
+
+​		引入mall-mbg模块，data-redis，data-elasticsearch
+
+​		配置 applicaton.yml 指定端口 8081，mybatis包扫描路径
+
+​				application-dev.yml  指定mysql的datasource，druid配置， es的地址，logging与logstash日志框架级别。
+
+​		Config：
+
+​			MyBatisConfig，读取配置文件
+
+​			SwaggerConfig ：*Swagger API**文档相关基础配置*
+
+​		Domain实体类
+
+​			EsProduct：商品信息，MongoDB文档，指定主键、索引、字段属性等
+
+​			EsProductAttributeValue：搜索商品的属性信息	
+
+​			EsProductRelatedInfo：搜索商品的关联信息，包括：品牌名称，分类名称，商品属性
+
+​		主要功能 
+
+```java
+//根据指定ID搜索商品
+List<EsProduct> getAllEsProductList(@Param("id") Long id);
+
+//搜索分页查询，条件由：商品名称，商品关键字，商品标题
+Page<EsProduct> findByNameOrSubTitleOrKeywords(String name, String subTitle, String keywords,Pageable page);
+```
+
+​	Controller：
+
+​		导入所有数据库商品到ES、根据id删除商品、根据id批量删除商品、根据id创建商品。简单搜索、综合搜索（筛选条件，排序）、根据商品id推荐商品、获取搜索的相关品牌、分类及筛选属性、
+
+#### 	**Service：**主要查询思路与推荐逻辑
+
+​		importAll（）：从 pms_product p 表中拿到所有符合条件的商品信息，并将其存放到EsProduct的MongoDB文档中，定时任务来维护。@Scheduled(cron = "0 0 * * * ?")     @EnableScheduling 
+
+​		基础增删改。
+
+​		**search：** 看着长只是把三个条件的判断以及sort排序的判断写在了一起，追加补完查询条件nativeSearchQueryBuilder.withQuery()
+
+ES查询可以指定 名字，关键字，以及查询权重、排序方式、聚合多个字段查询
+
+```java
+@Override
+    public Page<EsProduct> search(String keyword, Long brandId, Long productCategoryId, Integer pageNum, Integer pageSize,Integer sort) {
+        Pageable pageable = PageRequest.of(pageNum, pageSize);
+        NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
+        //分页
+        nativeSearchQueryBuilder.withPageable(pageable);
+        //过滤
+        if (brandId != null || productCategoryId != null) {
+            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+            if (brandId != null) {
+                boolQueryBuilder.must(QueryBuilders.termQuery("brandId", brandId));
+            }
+            if (productCategoryId != null) {
+                boolQueryBuilder.must(QueryBuilders.termQuery("productCategoryId", productCategoryId));
+            }
+            nativeSearchQueryBuilder.withFilter(boolQueryBuilder);
+        }
+        //搜索
+        if (StrUtil.isEmpty(keyword)) {
+            nativeSearchQueryBuilder.withQuery(QueryBuilders.matchAllQuery());
+        } else {
+            List<FunctionScoreQueryBuilder.FilterFunctionBuilder> filterFunctionBuilders = new ArrayList<>();
+            filterFunctionBuilders.add(new FunctionScoreQueryBuilder.FilterFunctionBuilder(QueryBuilders.matchQuery("name", keyword),
+                    ScoreFunctionBuilders.weightFactorFunction(10)));
+            filterFunctionBuilders.add(new FunctionScoreQueryBuilder.FilterFunctionBuilder(QueryBuilders.matchQuery("subTitle", keyword),
+                    ScoreFunctionBuilders.weightFactorFunction(5)));
+            filterFunctionBuilders.add(new FunctionScoreQueryBuilder.FilterFunctionBuilder(QueryBuilders.matchQuery("keywords", keyword),
+                    ScoreFunctionBuilders.weightFactorFunction(2)));
+            FunctionScoreQueryBuilder.FilterFunctionBuilder[] builders = new FunctionScoreQueryBuilder.FilterFunctionBuilder[filterFunctionBuilders.size()];
+            filterFunctionBuilders.toArray(builders);
+            FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery(builders)
+                    .scoreMode(FunctionScoreQuery.ScoreMode.SUM)
+                    .setMinScore(2);
+            nativeSearchQueryBuilder.withQuery(functionScoreQueryBuilder);
+        }
+        //排序
+        if(sort==1){
+            //按新品从新到旧
+            nativeSearchQueryBuilder.withSorts(SortBuilders.fieldSort("id").order(SortOrder.DESC));
+        }else if(sort==2){
+            //按销量从高到低
+            nativeSearchQueryBuilder.withSorts(SortBuilders.fieldSort("sale").order(SortOrder.DESC));
+        }else if(sort==3){
+            //按价格从低到高
+            nativeSearchQueryBuilder.withSorts(SortBuilders.fieldSort("price").order(SortOrder.ASC));
+        }else if(sort==4){
+            //按价格从高到低
+            nativeSearchQueryBuilder.withSorts(SortBuilders.fieldSort("price").order(SortOrder.DESC));
+        }else{
+            //按相关度
+            nativeSearchQueryBuilder.withSorts(SortBuilders.scoreSort().order(SortOrder.DESC));
+        }
+        nativeSearchQueryBuilder.withSorts(SortBuilders.scoreSort().order(SortOrder.DESC));
+        NativeSearchQuery searchQuery = nativeSearchQueryBuilder.build();
+        LOGGER.info("DSL:{}", searchQuery.getQuery().toString());
+        SearchHits<EsProduct> searchHits = elasticsearchRestTemplate.search(searchQuery, EsProduct.class);
+        if(searchHits.getTotalHits()<=0){
+            return new PageImpl<>(ListUtil.empty(),pageable,0);
+        }
+        List<EsProduct> searchProductList = searchHits.stream().map(SearchHit::getContent).collect(Collectors.toList());
+        return new PageImpl<>(searchProductList,pageable,searchHits.getTotalHits());
+    }
+```
+
+## 部署：
 
 
 
