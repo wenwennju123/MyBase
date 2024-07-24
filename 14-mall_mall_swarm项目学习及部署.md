@@ -1232,25 +1232,118 @@ ES查询可以指定 名字，关键字，以及查询权重、排序方式、�
 
 服务端口：
 
-​	MallAdmin：8080
+​	MallAdmin：8080;   接口文档地址  http://localhost:8080/swagger-ui/
 
-​	MallPortal：8085
+​	MallPortal：8085;   接口文档地址  http://localhost:8085/swagger-ui/
 
-​	MallSearch：8081
+​	MallSearch：8081;   接口文档地址  http://localhost:8081/swagger-ui/
 
-MySQL：3306
+MySQL：3306  ; username: **root**  ; password:   **Lbw1151290007**
 
-MinIO：9000
+MinIO：9000   ;  username: **minioadmin**  ; password:  **minioadmin**
 
-MongoDB：27017
+MongoDB：27017;  username:   ; password:  
 
-Redis：6379
+Redis：6379;  username:   ; password:  
 
-RabbitMQ：5672
+RabbitMQ：5672;  username:  **guest** ; password:  **guest**
 
-Elasticsearch：9200
+Elasticsearch：9200;  username:   ; password:  
 
+### 启动：
 
+​	下载并安装mysql5.7，创建数据库mall，运行脚本mall.sql
+
+​	启动redis
+
+```shell
+redis-server.exe redis.windows.conf
+```
+
+​	启动Elasticsearch
+
+```shell
+elasticsearch.bat
+```
+
+​	启动Kibana
+
+```shell
+# 用户界面默认为   http://localhost:5601
+kibana.bat
+```
+
+​	启动Logstash
+
+```shell
+# 7.17.3版本由bug
+# -f 带的参数要带配置文件的完整路径，win启动直接写绝对路径
+logstash -f C:\dev\logstash-8.12.0\bin\logstash.conf
+```
+
+​	启动MongoDB
+
+```
+mongo.exe
+```
+
+​	启动RabbitMQ；
+
+```shell
+rabbitmq-server.bat
+#启动管理功能   http://localhost:15672/
+rabbitmq-plugins enable rabbitmq_management
+#移除服务 
+```
+
+​	启动MinIO
+
+```shell
+#minio在 9000，minio console 在 9001
+minio.exe server D:\developer\env\minio\data --console-address ":9001"
+```
+
+​	启动服务： mall-admin
+
+​	启动服务： mall-search
+
+​	启动服务： mall-portal
+
+### 试运行：
+
+​	通过swagger-ui文档快速了解项目功能
+
+​	通过登录接口 /admin/login 获取token  （对于`mall-portal`模块的接口调用也是一样的，登录获取token的接口为`/sso/login`）
+
+​	然后点击Swagger文档的`Authorize`按钮，输入`tokenHead`+`token`拼接的认证请求头，注意`tokenHead`后面有个空格；
+
+​	目前刷新页面就失效了
+
+```
+    "tokenHead": "Bearer ",
+    "token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTcyMjQ0NjY0MiwiY3JlYXRlZCI6MTcyMTg0MTg0MjIzNH0.grjPrw555V4LA20uTwdGeP2LpdG8FbB891ZjXs2rWosY-Uh6HUOzdhF3abwtWDJ3DJHvvfQI3GoRv2FpNqs70g"
+```
+
+​	完成用户认证
+
+**修理Fix：**  mall-search包 pom添加redis依赖
+
+​					mall-common包的 config包的    BaseRedisConfig等，添加 @Configuration
+
+​			com.macro.mall.security.config;包的		SecurityConfig
+
+```java
+    /**
+     * 有问题的字段，无法注入、直接关闭
+     */
+    @Autowired(required = false)
+    private DynamicSecurityService dynamicSecurityService;
+    /**
+     * 有问题的字段，无法注入、直接关闭
+     */
+    @Autowired(required = false)
+    private DynamicSecurityFilter dynamicSecurityFilter;
+```
 
 
 
