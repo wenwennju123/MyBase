@@ -1,12 +1,10 @@
 ## 简历编写
 
-**思考** 升级网关是否需要更换域名来引流
-
 上海市的人口约2500万，户籍人口约1500w，共16个区块。
 
 2022年时，上海的机动车保有量就已经突破500万辆
 
-
+## 思考
 
 增强了代码的管理意识（git）
 
@@ -48,13 +46,33 @@ sql的严谨性：
 
 定时任务维护ES商品查询。
 
+OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
+用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
+轮播广告，商品信息，评论，品牌等人工+定时任务更新
+
+数据库各类记录如何归档
+
+降价以及优惠活动通知系统
+
+llama3.1 8b  AI的应用，大模型本地部署使用，GPT 4o，辅助代码阅读、审查，业务理解等。
+
+（大模型、针对业务功能、LoRA脚本、微调、训练、评估。应用：数据处理、数据清洗，质量评估，去重）
 
 
 
+现有的app的规范，都有防注水机制，验证码机制，同一个账号发送太过频繁就会发验证码，重新登陆并且锁设备等。
+
+攻击变成了消耗系统资源，系统算力等。大规模商家注册、商品注册、购物加购、订单生成等。
+
+延迟消息队列，防止用户下单不付钱等操作。
 
 
 
-缓存 双写，延迟双删
+协调运维人员，Kubernates的HPA自动扩容，综合cpu使用率，请求数和请求响应时间（自定义指标适配器）等参数来配置
+
+
+
+缓存 双写，延迟双删   缓存过期时间
 
 网关--服务限流、熔断、降级-------爬虫、集中访问攻击、实际遇到的：连续刷太久淘宝会变卡，无法加载。反爬虫
 
@@ -91,6 +109,12 @@ sql的严谨性：
 **后来：**零售业务整个砍掉，变为仓储租赁，原有的只保留医疗器械生产及配送
 
 **发展方向：**平台--整合生产资源和商家和渠道----失败
+
+
+
+
+
+
 
 # P1--SSM单体项目
 
@@ -160,6 +184,10 @@ claims = Jwts.parser()
 
 ​				字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等。对于字符串脱敏，是在json数据序列化时，也可以在这时自定义json的脱敏序列化类，来处理需要脱敏的字符串，判断原字段上是否有特定注解，有就加以脱敏处理、执行对应的脱敏逻辑
 
+​		RabbitMQ
+
+
+
 ### 开发工具
 
 IDEA，RedisDesktop,Robomongo,SwitchHosts,X-shell,PowerDesigner,PostMan,Navicat
@@ -182,37 +210,37 @@ JDK1.8, MySQL5.7, Redis7.0, MongoDB5.0, RabbitMQ3.10.5, Nginx1.22, Elasticsearch
 
 ### 系统架构图
 
-![re_mall_system_arch](E:\mall-main-jpgresource\re_mall_system_arch.jpg)
+![re_mall_system_arch](E:\mall\document\resource\re_mall_system_arch.jpg)
 
 ### 功能结构图
 
-![re_mall_business_arch](E:\mall-main-jpgresource\re_mall_business_arch.jpg)
+![re_mall_business_arch](E:\mall\document\resource\re_mall_business_arch.jpg)
 
 ### 业务逻辑及表结构
 
 #### 推荐内容及评论及帮助
 
-![mind_content](E:\mall-main-jpgresource\mind_content.jpg)
+![mind_content](E:\mall\document\resource\mind_content.jpg)
 
 #### 用户及会员
 
-![mind_member](E:\mall-main-jpgresource\mind_member.jpg)
+![mind_member](E:\mall\document\resource\mind_member.jpg)
 
 #### 订单
 
-![mind_order](E:\mall-main-jpgresource\mind_order.jpg)
+![mind_order](E:\mall\document\resource\mind_order.jpg)
 
 #### APP设计
 
-![mind_portal](E:\mall-main-jpgresource\mind_portal.jpg)
+![mind_portal](E:\mall\document\resource\mind_portal.jpg)
 
 #### 商品
 
-![mind_product](E:\mall-main-jpgresource\mind_product.jpg)
+![mind_product](E:\mall\document\resource\mind_product.jpg)
 
 #### 活动促销
 
-![mind_sale](E:\mall-main-jpgresource\mind_sale.jpg)
+![mind_sale](E:\mall\document\resource\mind_sale.jpg)
 
 ## 架构及业务解析
 
@@ -353,43 +381,17 @@ Swagger-UI也集成了在线接口测试功能，可以直接在在线文档上�
 
 ### 整合redis实现缓存
 
-
-
-
-
 ### 整合SpringSecurity和JWT实现认证授权
-
-
-
-
 
 ### 整合SpringTask实现定时任务
 
-
-
-
-
 ### 整合Elasticsearch实现商品搜索
-
-
-
-
 
 ### 整合MongoDB实现文档操作
 
-
-
-
-
 ### 整合RabbitMQ实现延迟消息
 
-
-
-
-
 ### 整合OSS、MinIO实现文件上传
-
-
 
 
 
@@ -1347,14 +1349,6 @@ minio.exe server D:\developer\env\minio\data --console-address ":9001"
 
 
 
-## 问题与思考：
-
-OSS对象存储存了商品图（比如原来是本地存的，压力太大转到OSS）
-用户查询订单信息时，先只显示部分信息，订单详情，物流信息及详情需要额外点击再查询
-轮播广告，商品信息，评论，品牌等如何更新，各类记录如何归档
-
-
-
 ### 表设计：
 
 #### oms_order 电商订单表：
@@ -1596,15 +1590,13 @@ ums_role_resource_relation 后台角色与后台资源关系表
 
 见powerdesigner
 
-
-
 # P1--电商 mall_swarm 升级版
 
 SpringCloud SpringCloudAlibaba Nacos GateWay
 
 ## 架构升级
 
-![mall_micro_service_arch](E:\mall-main-jpgresource\mall_micro_service_arch.jpg)
+![mall_micro_service_arch](E:\mall\document\resource\mall_micro_service_arch.jpg)
 
 
 
