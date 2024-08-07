@@ -16,6 +16,10 @@ Spring注入规范，尽量使用构造注入，对于Config类中的属性不�
 
 提取通用工具类，值，增强复用性
 
+团队分工协作的理解
+
+api管理意识
+
 工具类的使用，泛型的使用，
 
 通过方法重载，传入不同参数的形式，提高利用率，例如返回成功结果，返回失败结果
@@ -179,7 +183,7 @@ excel表格读取与生成
 
 mysql中的业务逻辑移到service，并且处理掉以往因业务缺陷导致的mysql数据缺失。例如缺考成绩不是0而是没有这个数据。
 
-# P1--电商 mall
+# P1--电商mall_后端
 
 ### 技术选型：
 
@@ -228,8 +232,6 @@ claims = Jwts.parser()
 ​				BeanUtils.copyProperties(
 
 ​				字符串脱敏工具类DesensitizedUtil.mobilPhone carLicense等。对于字符串脱敏，是在json数据序列化时，也可以在这时自定义json的脱敏序列化类，来处理需要脱敏的字符串，判断原字段上是否有特定注解，有就加以脱敏处理、执行对应的脱敏逻辑
-
-​		RabbitMQ
 
 
 
@@ -1323,7 +1325,7 @@ kibana.bat
 ​	启动Logstash
 
 ```shell
-# 7.17.3版本由bug
+# 7.17.3版本 bug
 # -f 带的参数要带配置文件的完整路径，win启动直接写绝对路径
 logstash -f C:\dev\logstash-8.12.0\bin\logstash.conf
 ```
@@ -1373,7 +1375,9 @@ minio.exe server D:\developer\env\minio\data --console-address ":9001"
 
 ​	完成用户认证
 
-**修理Fix：**  mall-search包 pom添加redis依赖
+### **修正：**
+
+​			  mall-search包 pom添加redis依赖
 
 ​					mall-common包的 config包的    BaseRedisConfig等，添加 @Configuration
 
@@ -1391,8 +1395,6 @@ minio.exe server D:\developer\env\minio\data --console-address ":9001"
     @Autowired(required = false)
     private DynamicSecurityFilter dynamicSecurityFilter;
 ```
-
-
 
 ### 表设计：
 
@@ -1635,9 +1637,34 @@ ums_role_resource_relation 后台角色与后台资源关系表
 
 见powerdesigner
 
-# P1--电商 mall_swarm 升级版
+# P1--电商 mall_前端
 
-SpringCloud SpringCloudAlibaba Nacos GateWay
+nodejs   v12.14.0
+
+npm run dev
+
+使用idea成功管理依赖以及修改vue后，在项目根目录执行npm命令即可
+
+```shell
+# 设置为淘宝的镜像源
+npm config set registry https://registry.npm.taobao.org
+# 设置为官方镜像源
+npm config set registry https://registry.npmjs.org
+
+npm config set SASS_BINARY_SITE=https://npm.taobao.org/mirrors/node-sass
+
+npm install
+
+npm run dev
+
+Ctrl + C
+```
+
+### 修正
+
+
+
+# P1--电商 mall_swarm 升级版
 
 ## 架构升级
 
@@ -1645,15 +1672,68 @@ SpringCloud SpringCloudAlibaba Nacos GateWay
 
 
 
+使用了Nacos作为服务发现和配置中心，GateWay作为网关。并且添加了 mall-monitor作为监控中心、使用kni
+
+SpringCloud SpringCloudAlibaba Nacos GateWay
+
+其余的Redis，ELK，MongoDB，RabbitMQ，MinIO与mall项目中类似
+
+还需要额外启动nacos
+
+## 启动顺序
+
+- 启动网关服务`mall-gateway`，直接运行`MallGatewayApplication`的main函数即可；
+- 启动认证中心`mall-auth`，直接运行`MallAuthApplication`的main函数即可；
+- 启动后台管理服务`mall-admin`，直接运行`MallAdminApplication`的main函数即可；
+- 启动前台服务`mall-portal`，直接运行`MallPortalApplication`的main函数即可；
+- 启动搜索服务`mall-search`，直接运行`MallSearchApplication`的main函数即可；
+- 启动监控中心`mall-monitor`，直接运行`MallMonitorApplication`的main函数即可；
+- 运行完成后可以通过监控中心查看监控信息，账号密码为`macro:123456`：http://localhost:8101
+- 运行完成后可以直接通过如下地址访问API文档：http://localhost:8201/doc.html
+- 如何访问需要登录的接口，先调用认证中心接口获取token，后台管理`client_id`和`client_secret`为`admin-app:123456`，前台系统为`portal-app:123456`；登录用户 admin 密码 micro123 ；然后将token添加到请求头中 前缀 Bearer ，即可访问需要权限的接口了。
+
+## 模块详解
+
+### mall-gateway
+
+配置路由断言和过滤器工厂，oauth2的配置RSA的公钥访问地址，redis，放行白名单，并开启SpringBoot Admin的监控与Swagger配置
 
 
 
+## 修正
 
+### mall-gateway
 
+mall-auth、mall-admin、mall-portal、mall-search、mall-monitor同理
 
+并且所有数据库链接的账号密码等，寻需要配置自己的。
 
+配置：include     bootstrap.yml 和 bootstrap-dev.yml
 
+```yaml
+spring:  
+  profiles:
+    include:
+      - bootstrap.yml
+      - bootstrap-dev.yml
+```
 
+并且对nacos配置添加用户名和密码
+
+```yaml
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: http://localhost:8848
+        username: nacos
+        password: nacos
+      config:
+        username: nacos
+        password: nacos
+        server-addr: http://localhost:8848
+        file-extension: yaml
+```
 
 
 
