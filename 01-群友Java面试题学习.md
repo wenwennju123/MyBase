@@ -1,4 +1,4 @@
-# 群友Java面试题学习-0805
+# Java面试题学习-0805
 
 ## 01-算法类
 
@@ -927,7 +927,7 @@ spring:
     queue: taskQueue
 ```
 
-定义一个 `TaskMessage` 类来表示消息：
+定义一个 `TaskMessage` 类来表示任务消息模型：
 
 ```java
 public class TaskMessage {
@@ -981,7 +981,7 @@ public class TaskServiceImpl implements TaskService {
             TaskMessage taskMessage = new TaskMessage();
             taskMessage.setId(task.getId());
             taskMessage.setKey(task.getKey());
-            // 发送单个任务消息
+            // 发送单个任务消息，把每一个task，通过消息的方式，均分给所有的爬虫消费者
             rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, taskMessage);
         }
     }
@@ -1033,8 +1033,12 @@ public class TaskMessageListener {
         Task task = new Task();
         task.setId(taskMessage.getId());
         task.setKey(taskMessage.getKey());
-
+		// 调用爬虫webScraper服务去爬取信息，返回updatedTask
         Task updatedTask = webScraper.fetchTaskDetails(task);
+        // 对task进行一些业务逻辑判断
+        
+        // 将爬取到的task加入消息队列
+        // 注意这里的代码是单个爬虫实例，是由上一步骤MQ分发消息在运行，需要考虑每个爬虫平均会接收到多少消息，以及不足批量的数量时的主动提交。
         batchTasks.add(updatedTask);
 		//消息积累达到100时
         if (batchTasks.size() >= BATCH_SIZE) {
@@ -1047,7 +1051,7 @@ public class TaskMessageListener {
         if (!batchTasks.isEmpty()) {
             BatchTaskMessage batchTaskMessage = new BatchTaskMessage();
             batchTaskMessage.setTasks(batchTasks);
-            //发送消息
+            //发送消息给mybatis去批量更新
             rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.BATCH_ROUTING_KEY, batchTaskMessage);
             batchTasks.clear();
         }
@@ -1113,11 +1117,12 @@ public class BatchTaskMessageListener {
 
     @Autowired
     private TaskMapper taskMapper;
-
+	// 接收批量更新消息
     @RabbitListener(queues = RabbitMQConfig.BATCH_QUEUE_NAME)
     public void receiveBatchMessage(BatchTaskMessage batchTaskMessage) {
         List<Task> tasks = batchTaskMessage.getTasks();
         if (tasks != null && !tasks.isEmpty()) {
+            // task以ID 唯一，无需考虑并发下的冲突
             taskMapper.updateTasks(tasks);
         }
     }
@@ -1139,7 +1144,7 @@ public interface TaskMapper {
 }
 ```
 
-`TaskSqlProvider.java`  mapper接口实现，MyBatis动态实现批量插入SQL，就是把所有的插入拼接为一个很长的sql语句。
+`TaskSqlProvider.java`  mapper接口实现，MyBatis**动态实现批量插入SQ**L，就是把所有的插入拼接为一个很长的sql语句。
 
 ```java
 import org.apache.ibatis.jdbc.SQL;
