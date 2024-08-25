@@ -4,16 +4,6 @@
 视频：
 https://www.bilibili.com/video/BV1Dx4y1k7jU
 
-day10
-MyBatis 5p
-HashMap 10p
-ThreadLocal 10p
-jvm 23p
-
-day11
-MySQL 30p
-SpringBoot 13p
-SpringCloud 13p
 
 *****************************************************************************************************************************************
 Redis使用场景-分布式锁的实现
@@ -612,7 +602,7 @@ RabbitMQ：如何保证消息的发送，接收的准确性，可靠的传递、
 				// 根据业务的执行结果来进行判断
 
 				// 手动确认消息，消息销毁。 multiple: false
-				channel.basicAsk( , false);
+				channel.basicAck( , false);
 
 				// 不确认消息，该消息重新入队等待下一次消费，一种重试策略
 				// 需要避免死循环，需要限制重试次数，可以选择放入死信队列( , multiple =  false, requeue =  false)，或执行下一步的逻辑
@@ -1030,152 +1020,1104 @@ ThreadLocal：为什么会导致内存泄漏
 	如果线程正常结束，线程引用Entry[] 正常清除，jvm的GC会进行回收，不会引发问题。
 	如果线程没有回收和销毁，例如线程池中的核心线程，使用后会归还。
 		此时被引用的Entry[] 不会销毁，数组中保存的键值对不会被释放。随着累计，内存占用越来越多，导致内存溢出泄露。
-	核心原因是线程依旧存在，即使Entry的key是强引用了，但是原来的线程依旧引用Entry[]数组，其内存得不到释放。
+	核心原因是线程依旧存在（线程池），即使Entry的key是强引用了，但是原来的线程依旧引用Entry[]数组，其内存得不到释放。
 
 	处理方法：
 		当调用set get 方法时，ThreadLocal会检测key为空的所有Entry，将其释放
 	处理方法：
 		当该线程的任务结束后，使用try -- finally语句块，手动清除Entry[]
+			threadLocal.set();      // 只要用了threadLocal的set，结束了就一定要remove() 就像IO流必须手动关闭
 			threadLocal.remove();
 		就可以确保不会内存泄露
 
 
 Thread：线程相关 sleep() 和 wait() 的区别
+	所属的类不同，Thread.sleep(1000);  t.wait();
+	方法的类型不同 sleep是静态方法   wait是实例方法
+	使用语法不同	可以直接线程类调用sleep      wait方法必须要拿到该对象的锁  synchronized(monitor){ monitor.wait(1000); }
+	唤醒方式不同	sleep和wait都可以自动唤醒，不过sleep必须传时间。  
+					wait不传时间就需要 另一个线程来notify方法或者notifyAll来唤醒
+					new Thread(() -> {
+						synchronized(monitor){
+							monitor.notify();
+						}
+					})
+	释放锁资源不同   Thread.sleep()时，不会释放该线程持有的synchronized(monitor) 锁。
+					monitor.wait()时，会直接释放该线程持有的synchronized(monitor) 锁
+	线程状态不同
+		sleep ： TIMED_WAITTING
+		wait：   WAITTING
 
 
+Thread：线程相关：多个线程如何保证按照顺序执行？？？按顺序了序列化了要多线程干嘛
+	解决方法：
+		使用join() 方法，让当前线程阻塞，等待指定线程执行完毕后继续执行。
+			在 t2 线程的逻辑中，添加 t1.join();
+			意为阻塞当前线程，让t1先执行完毕，再恢复当前线程
+			也可以在main线程（主方法）中，依照代码由上至下执行的原则，依次join对应的t1 t2线程等
+			join方法有一句注解：Waits for this thread to die。底层的实现用了wait方法。。。
+				所以join也叫线程插队
+		
+		// 注意 ThreadPoolExecutor 是 ExecutorService的一个实现类，具有线程池的核心功能方法与线程池行为。
+		//	   例如获取核心线程数，最大线程数，队列类型，线程工厂等 getPoolSize\getActiveCount\getComplatedTaskCount等
+		// 而ExecutorService主要是提供管理线程池的多种方法，execute、submit、invokeAll、shutdown等
+		创建单一化线程池 private static ExecutorService execurotService = Execurots.newSingleThreadExecutor()
+			实际上就约等于是 private static final ThreadPoolExecutor threadPoolExecutor = 
+					new ThreadPoolExecutor(1, 1, 0L, TimeUint.MILLSECONDS, newLinkedBlockingQueue<Runnable>(1024))
+			然后依次提交t1任务、t2任务、t3任务   核心线程数为1，队列是先进先出，就是依次执行任务。
+			threadPoolExecutor.execure(t1);
+			threadPoolExecutor.execure(t2);
+			threadPoolExecutor.execure(t3);
+			有开启就要有结束
+			threadPoolExecutor.shutdown();
+
+		倒数计时器 CountDownLatch
+			private static final CountDownLantch countDownLatch = new CountDownLatch(1);
+			计时器减一  countDownLatch.countDown();
+			计数器判断  countDownLatch.await();    等待，直到计数器归0继续执行
+			让需要排队执行的前一步操作下一步的计数器，保证执行顺序。
+
+		使用Object的 wait/notify 实现
+		使用线程的Condition 条件变量方法实现
+		使用线程的CyclicBarrier 回环栅栏 方法实现
+		使用线程的 Semaphore 信号量方法实现
 
 
-Thread：线程相关：多个线程如何保证按照顺序执行
+Thread：线程池相关 execute() 和 submit() 的区别
+	execute() 只能提交Runnable，无返回值。subbmit可以提交 Runnable无返回值 和 Callable 返回值Future
+	execute() 方法是 Executor接口中定义的，submit() 方法是ExecutorService接口中定义的，而ThreadPoolExecutor是ExecutorService的实现类
+	execute() 方法执行遇到异常会直接抛出，submit() 执行任务遇到异常时不会直接抛出，只有在调用Future.get() 方法获取返回值时抛出异常。
 
+	为什么submit()方法不会直接抛出异常
+		submit方法首先会将Runnable转换为返回值为空的Callable
+		然后包装为FutureTask      执行execute(ftask)
+		对于FutureTask，有状态码 private volatile int state 0-6 0：new
 
+		底层的执行是addWork 然后调用 work 方法，work来调用线程任务的 task.run() 方法
+		如果任务的执行run中出现了异常，会被捕获catch(Throwable ex)，同时将结果置为空，
+			同时将异常对象添加 setException(ex) 到 FutureTask 的成员变量 outcome 中。并没有抛出。
+		只有读取结果 future.get() 时，拿到成员变量中的异常信息，才会抛出
 
-
-Thread：线程相关 execute() 和 submit() 的区别
+	对比：execute()方法会直接抛出异常
+		没有包装成futureTask而是直接传Runnable。在work的时候，从 futureTask 为 firstTask。 都有task.run()
+		然后并没有对其包裹try catch，就直接抛出了
 
 
 *****************************************************************************************************************************************
 JVM：继承关系：父类和子类之间的初始化顺序是什么
+	父类--静态变量     public static String s = “123”
+	父类--静态初始化块		static{  }
+	子类--静态变量
+	子类--静态初始化块
+	以上不需要new对象就会执行，是在类加载时候执行的
+--------------------------------------------------------- 
+	父类--变量			protected int i = 0
+	父类--初始化块		{  }
+	父类--构造器		public ParentClass(){ }
+	子类--变量
+	子类--初始化块
+	子类--构造器
 
 
+JVM：继承关系：双钱委派机制/模型
+
+		加载一个类，自己先不加载，向上交由双亲加载。
+		双亲加载不了，向下委派去自己加载。
+			
+		自底向上检测--是否加载成功
+		自顶向下尝试--加载
+
+			类加载器
+
+		Bootstrap ClassLoader     系统类加载器		Java核心类库
+
+		8之前 Extension ClassLoader		扩展类加载器		引入外部的jar包、插件扩展等。
+		(JDK9之后 Platform ClassLoader)		平台类加载器
+
+		App ClassLoader				应用类加载器    Classpath		应用类，就是自己写的类。首先都交给app来加载
+
+		Custom ClassLoader			自定义加载器 继承ClassLoader    加载其他自定义的、特殊的目录下的类
+
+	加载String类，首先是由App ClassLoader负责加载，但是将其委派给上一级的Extension ClassLoader，然后再委派给上一级的Bootstrap ClassLoader
+		找到了java.lang.String 加载成功
+
+	如果是加载某个ext扩展类，依旧是先发给appClassLoader去加载，然后逐级向上委派，然后bootstrapClassLoader没找到
+		这时bootstrapClassLoader就会 委派 下一级的 ExtensionClassLoader去尝试加载
+		ext加载成功
+	
+	如果是自己写的 user.java。上述都一样，逐级向上委派之后，逐级向下委派
+		ExtensionClassLoader没有找到，向下委派到AppClassLoader 在Classpath下加载成功。
+
+	如果AppClassLoader也没有找到，就报错 ClassNotFoundException 异常。常见于jar包版本不兼容等情况。
+
+	为什么都首先交给AppClassLoader加载，因为应用程序的main入口在app类加载器负责的范围中，就是自己写的类
 
 
+JVM：为什么要设计双亲委派机制
+	安全性：保证Java的核心类库安全，不被修改
+		例如java.lang.String。
+		先向上委派到系统类加载器就成功加载并返回了。不需要在向下
+			如果是自己写的需要逐级向下等到AppClassLoader才会加载，是加载不到的。
 
-JVM：继承关系：双钱委派机制
+		并且Java处于安全考虑，自己写的代码，类。是不可以使用java核心类库的包名的。避免重名和混淆。
+	
+	避免重复加载
+
+	保证类的唯一性
 
 
+JVM：如何突破双亲委派机制
+	可以：类加载器中有一个自定义类加载器 Custom ClassLoader
+		重写其中的loadClass方法，使其不进行双亲委派即可
+	
+	Java 核心 Launcher包中，存放着类加载器 AppClassLoader   ExtClassLoader
+		BootstrapClassLoader 是c++的本地代码不显示在java中。
+	
+	主要的方法 loadClass
+	从URLClassPath ucp中可以看出所有待加载的类路径包路径。
+		例如jdk/jre/lib   核心类
+		target目录下的自己编写的类
+		以及扩展的 repoistory 例如springframwork/boot/spring-boot-starter
+		如果是idea编辑的 还会有idea支持的测试工具插件等的jar包
 
+	调用父类加载器：
+		return super.loadClass(var1, var2);
 
+	类加载器的顶级父类（抽象类）
+		ClassLoader
+
+	其他的中间的实现类 例如 URLClassLoader SecureClassLoader都没有实现loadClass方法
+		所以调用 某个类加载器的parent去加载时候，都会调用顶级类的ClassLoader中的loadClass方法
+
+	ClassLoader中的loadClass方法就是实现双亲委派的核心逻辑。
+	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException{
+		synchronized(getClassLoadingLock(name)){
+
+			首先check当前类是否已经被加载了----找到了返回
+			没有找到则调用appClassLoader的parent----ExtClassLoader的loadClass去执行
+			ExtClassLoader的loadClass则尝试调用ExtClassLoader的parent的loadClass
+				因为是c++实现的BootstrapClassLoader   ExtClassLoader的parent是空
+			parent没空则调用BootstrapClassLoader的方法findBootstrapClassOrNull----找到了返回
+			Bootstrap类加载器没能加载到，调用Ext加载器的findClass方法来加载----找到了返回
+			没找到则递归回到上一层 用App加载器的findClass方法加载----找到了返回
+			没找到报错
+			所以报错是ClassNotFound，而不是ClassNotLoaded
+				
+			Class<?> c = findLoadedClass(name);
+			if(c == null){
+				long t0 = System.nanoTime();
+				try{
+					if (parent != null){
+						c = parent.loadClass(name, false);   
+					}else{
+						c = findBootstrapClassOrNull(name);
+					}
+				}catch(ClassNotFoundException e){
+				
+				}
+				if(c == null){
+					long t1 = System.nanoTime();
+					c = findClass(name);
+
+					sun.misc.PerfCounter.getParentDelegationTime().addTime(t1-t0);
+					sun.misc.PerfCounter.getFindClassTime.addElapsedTimeFrom(t1);
+					sun.misc.PerfCounter.getFindClasses().increment();
+				}
+			}
+			if(resolve){
+				resolveClass(c);
+			}
+			return c;
+		}
+	}
+
+	具体还有不同loadClass findClass方法重载（参数列表不同）来完善判断逻辑
+
+	核心逻辑：带有synchronized()锁块保护的递归思想，也体现了synchronized锁的可重入性。
+
+	故此，自定义类加载器继承 ClassLoader 覆盖掉这个核心的 loadClass 方法就可以跳出双亲委派机制
 
 
 JVM：什么是内存溢出
+	OutOfMemory  OOM   -----jmap
+	指程序在申请内存时，没有足够的内存空间供其使用，抛出OOM错误。
+	指没有空闲内存，垃圾回收器GC回收后也不能提供更多的内存空间。
+		突然某些实例大量增加，可能就是访问量突然增加了。
 
+	注意 OOM溢出的是堆内存，是对象没法被清理堆积过多导致。
 
+	栈内存是每个线程执行时自行分配，存有方法调用栈，局部变量等。如果递归次数过多，调用链过长。
+		可能导致栈内存使用过多进而导致 栈内存溢出错误   StackOverflowError    ----jstack
 
+	发生OOM后，其他线程是否可以继续工作
+		要视情况决定：
+			OOM是堆内存溢出
+			如果发生oom，是线程栈内部发生的，报错，线程栈执行结束，销毁。那么GC可能会强制清除该线程栈所有的堆内存
+				里面的数据也就全部丢掉了，造成数据丢失
+				如果再有新的正常线程过来就依旧正常处理。	
 
+			如果发生oom的是一个全局性的对象，引用被其他全局的无法被GC清理的对象持有等情况，就无法销毁，内存无法释放
+			并且也需要考虑对象的生命周期（Spring框架下）以及变量的范围，全局变量，局部变量。
+				如果一个spring的单例bean持有一个会oom的全局变量的引用，那么它oom之后也GC无法释放内存。
+				就会导致一直堆内存爆满，导致无法进行任何操作了，再过来正常请求也无法处理。
 
+		主要判断依据就是：发生OOM后，对象能否销毁，GC能否清除内存
+
+		jvm内存可视化监控工具
+			visualvm     bin目录下启动
+			可以可视化的看到堆内存，GC的情况
 
 JVM：什么是内存泄露
+	Memory Leak
+	指程序运行后，没有释放所占用的内存空间（有引用在引用对象，无法释放，GC无法回收）
+	一次内存泄露可能影响不大，但长时间多次数的内存泄露发生堆积，占用大量内存，就会产生内存溢出
+
+	常见情况：单例对象，生命周期与应用程序一样长（不会主动回收的对象）。如果该单例对象持有对外部对象的引用。
+		那么这个外部对象在使用结束后是无法被回收的，就会产生内存泄漏
+	
+	常见情况：资源的关闭。例如数据库连接JDBC，网络链接socket，IO流stream，ThreadLocal等
+		都必须在finally语句块中close，或try with source来在使用后关闭。
+		否则都不会被GC回收
 
 
+JVM：如何配置线上环境
+	JVM：栈、堆、元空间
+
+	默认的：栈 1m，设置 -xss512k，
+		也就是默认一个线程是1m。如果项目中可能有300个线程，那么默认线程就用了300m
+
+	堆(关键)：大概将机器的一半内存分配给堆，新生代，老年代
+		CMS: 1/3   2/3    CMS垃圾收集器的新生代和老年代所占的比例  适合堆比较小 8g以下的情况
+		G1: 6:4  G1垃圾收集器的新生代:老年代比例     适合堆比较大 8g以上的情况
+
+	元空间：一般512M就足够了
+		一般是用来加载类，比如项目中的各种开源框架和插件的依赖的加载
+		不设置就使用物理内存。
+
+	此时JVM的配置参数是：以4核8g为例
+	-Xms4096M -Xmx4096M -Xss1M -XX:MetaspaceSize-512M -XX:MaxMetaspaceSize=512M -XX:+UseG1GC
+
+	可以添加参数 -XX:+HeapDumpOnOutOfMemoryError
 
 
-JVM：线上/测试环境 cpu标高如何排查
+JVM：线上/测试环境 内存飙高如何排查
+	linux命令  
+		也可以直接在win环境下命令控制台 jmap --help来获取帮助
+		可以使用 man top 命令来查看 top命令的使用手册。
+
+		top  shift+m（排序）   找到哪个进程一直占用高额内存  拿到进程编号PID
+
+		jps  查看当前运行的java 进程（jvm自带的命令）  也可也拿到进程编号PID
+
+		jmap -histo <pid> | more | grep 'target'
+			是JVM自带的命令行工具，可以生成Java进程的内存映像文件 heap dump
+			通过与Java进程通信获取内存信息，并将信息输出到文件中，以便于后续离线分析
+			-histo 查看堆内存中的对象实例数目，内存占用大小，类名等
+			| more 来分屏观看，一次只显示一个屏幕的
+			| grep 'target'  筛选目标 target
+
+		jmap -dump:format=b,file=heapdump.hprof <pid>
+			打印详细的堆信息到文件中
+			直接 ll 就可以看到导出的文件在当前目录下，可以直接 sz 下载到电脑上处理
+			线上环境可能这个文件有几十gb。如果依旧在生产下直接导出，可能导致负载均衡崩掉。
+				就需要将这个文件导出的服务器单独拿出负载均衡，保证其他业务的正常执行，
+			分析工具 mat  MemoryAnalyzerTool
+				导入 hprof文件，生成统计图表与怀疑信息
+				分析软件会分析，哪个类占用的过多，实例堆积在哪里，某个数组或者Map过大，哪个线程异常了等等信息。
+				会生成KeyWords，作为我们分析问题排查程序的参考。
+				也可也通过堆内存的占用排序 Histogranm，直观的体现那些类占用过多
+				还可以通过 dominartor_tree path2gc分析引用关系，例如某个对象持有大量的另一个对象的引用，无法释放不断增长。
 
 
+JVM：线上/测试环境 cpu飙高如何排查
+	top命令
+		top -H -p pid
+		拿到占用较高的进程，并打印这个进程中比较占cpu的线程
+
+	jstack pid  查看java进程pid 的线程栈信息
+		jstack > 2410.txt  导出到文件，并sz命令下载 不过其中导出的pid是16进制的，linux直接显示的是10进制的，要查找需要转换一下。
+		可以直接printf '%x' tid 就可以转换16进制 转为默认前缀是 0x
+		然后查找自己的包名，有可能发生问题的包名
+		就可以定位有可能发生问题的代码位置。逐一排查
 
 
-JVM：线上/测试环境 内存标高如何排查
+JVM：高并发环境的优化策略（重要）
+	思路与经验的考察
+
+	例如：2020年天猫双11，全球狂欢季，订单创建峰值 58.3万笔/秒
+		2023年天猫双11，全周期累计访问用户数超8亿
+
+	内存预估：
+		以一台4核8g内存服务器为例，单机最大并发请求在300-400之间。
+		如果请求需要2000台机器同时处理，一个订单容量1KB。
+		一台机器就是 300*1KB*20（其他相关操作）*10（其他相关对象） 的内存开销，
+			这些是在jvm的新生代中创建，朝生夕死，一秒后使用完成，成功响应，60MB的对象进入垃圾回收 90%都会销毁。
+		（实际远远要更加复杂，可能有众多性能不同的服务器，服务器之间需要进行调度，服务器上还同时运行有很多其他的微服务程序）
+		（订单包含的信息以及用户数据也不会相同，可能有的很大有的很小。也有很多与订单生成的相关业务需要同时执行。生成订单也需要调用其他的微服务）
+
+	高并发对于jvm的影响：
+		堆：大量的请求对象，大量的与数据库交互的对象以及接收结果数据的封装对象，大量需要返回前端的dto对象和json。
+		栈：大量线程并发执行，
+
+	内存分配：
+		4核8g的机器，分给一半给jvm，其他留给操作系统以及其他中间件。
+		堆 3g，新生代1.5g，老年代1.5g。（需要调整的地方之一：新生代与老年代的比例） ------ new User()
+		栈估算：一个栈1mb，处理300个请求预估总线程500，那么就是占用500MB
+		元空间（永久代）（方法区）默认512MB---------User.class
+
+	JVM配置参数：
+		-Xms3072M -Xmx3072M -Xmn1526M -Xss1M
+		-XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=512M
+		-XX:+PrintGCDetails
+		-XX:+PrintGCDateStamps
+		-Xloggc:d:/gc.log
+		-XX:+HeapDumpOnOutOfMemoryError
+		-XX:HeapDumpPath=d:/heap.hprof
+		打印gc日志，oom时的heap快照
+
+	内存占用动态推算
+		新生代分为 Eden区 80%，S0区（FromSurvivor）10%，S1区(To Survivor)10%
+		1.5g的新生代，60m每秒生成，那么25秒新生代Eden占满，触发MinorGC （ParNew 是很快的，一般都是毫秒级）
+		一般情况下，一次可以回收掉90%的新生代（Eden + S0）对象，那么新生代还存活150MB，也就是S0 S1大致需要的空间。
+		-XX:SurvivorRatio  默认是8 就是 8：1：1  那么就是1.2g：150M：150M
+		有可能就有的放不下进入了老年代。如果老年代持续堆积，就会触发FullGC，是十分消耗性能的，jvm会暂停
+		所以新生代需要以Eden区为基准进行计算
+
+	优化分配老年代与新生代的比例：
+		新生代较小，发生一次MinorGC后，Survivor不足或者触发动态年龄判断，对象进入老年代。（Survivor空间不足）
+		将新生代调整为2g，老年代1g，此时Eden：1.6g，S0 200m，S1 200m （依旧保持默认的 8：1：1）
+		参数
+		-Xms3072M -Xmx3072M -Xmn2048M -Xss1M
+
+	对于 @Service @Controller 这类的单例Bean，SpringIoC容器没有关闭，他们是一直存活的，不会被回收的
+		可能不多就几十兆，他们应该尽快被放入老年代
+		修改 -XX:MaxTenuringThreshold=5  默认是 15.就是对象在S0区和S1区之间不断复制整理，切一次年龄增长一岁，到达15岁进入老年代。
+		改为5岁就加入老年代。也就是新生代5次垃圾回收都不能回收该对象，那么就放入老年代。（默认是15次）
+
+	对于项目中的大对象，例如数据库字典数据，配置数据，初始化数据。
+		这些内容需要直接进入老年代，
+		修改 
+		-XX:PretenureSizeThreshold=1M  阈值，对象大于1M，直接放入老年代
+
+	选择合适的GC垃圾回收器
+		修改 
+		-XX:+UseParNewGC  多线程的新生代的垃圾回收器  -XX:+UseConcMarkSweepGC   CMS垃圾回收器适合于内存比较小的服务器
+		G1垃圾收集器适合于内存比较大的情况
+
+	高峰期时间与容量的计算
+		按照每隔几分钟MinorGC，200mb被放到S1，五岁进入老年代
+		估算大只要一小时，才会有1gb进入老年代触发FullGC。
+		如果不是高峰期，可能要几个小时才会触发老年代的FullGC（在高峰来之前手动GC清理老年代）
+		增加配置，老年代达到75%就触发FullGC。触发FullGC后，需要内存整理，触发此处为0就是每次都整理。
+
+----------------------------------------------------------------------------------
+	最终JVM配置：
+
+		-Xms3072M -Xmx3072M -Xmn1526M -Xss1M
+		-XX:+UseCompressedClassPointers
+		-XX:MetaspaceSize=512M -XX:MaxMetaspaceSize=512M
+		-XX:+PrintGCDetails
+		-XX:+PrintGCDateStamps
+		-Xloggc:d:/gc.log
+		-XX:+HeapDumpOnOutOfMemoryError
+		-XX:HeapDumpPath=d:/heap.hprof
+		-XX:SurvivorRatio-8
+		-XX:MaxTenuringThreshold=5
+		-XX:PretenureSizeThreshold=1M
+		-XX:+UseParNewGC -XX:+UseConcMarkSweepGC
+		-XX:CMSInitiatingOccupancyFraction=75
+		-XX:+UseCMSCompactAtFullCollection
+		-XX:CMSFullGCsBeforeCompaction=0
 
 
+----------------------------------------------------------------------------------
 
-
-JVM：高并发环境的优化策略
-
-
-
-
+优化思路总结：
+	尽可能让对象在新生代里面分配和回收，避免对象频繁进入老年代频繁FullGC
+		也就是要分清楚，哪些对象是要快用快收的。
+	给系统充足的内存空间，避免新生代频繁的垃圾回收，调整新生代与老年代的比例
+	指定合适的垃圾收集器
 
 
 *****************************************************************************************************************************************
-MySQL：
+MySQL：存储引擎
+	select version();
+	show engines;
+
+	主要：MyISAM(用来压缩、只读 日志类，mysql 5之前的默认 表锁)   
+			InnoDB(支持事务ACID，分布式事务，保存点，行锁。默认)   
+			Memory(内存)
 
 
+MySQL是如何执行一条sql语句的
+	首先是客户端链接MySQL
+		JDBC,ODBC,Python PHP C等等
+	
+	然后进行权限认证验证链接 Connection Handling
+		
+	然后通过SQL接口 SQL Interface，接收SQL语句，
+		DML DQL
+	
+	然后解析 Parser SQL语句。生成语法树，执行路径。
+
+	然后mysql内部对与sql的执行进行优化，Optimizer 选择执行效率最高的来执行
+
+	然后录入缓存Caches（默认关闭）
+
+	然后由存储引擎执行sql语句，是可插拔的存储引擎。
+		Pluuggable Storage Engines
+
+	然后与磁盘、文件系统进行交互，处理数据
+		File System
 
 
+MySQL的InnoDB引擎是如何工作的，架构如何（重点）
+	执行器发送给InnoDB引擎去执行，（此前有语法树，执行优化等）
+
+	首先将需要更新的记录从磁盘文件中加载到缓冲池（内存缓冲区） BufferPool    --------- where 关键字
+		这个BufferPool，增删改时候是加载 数据页，在查询时就是加载对应的 索引页。
+
+	然后将旧的值（原本的数据）写入到 undo log 便于回滚。  ------  rollback
+
+	然后根据执行器发送的sql语句更新内存中的数据。  -----  执行DML sql 增删改
+
+	然后写 redo 日志到缓冲池 redo log buffer（内存缓冲区）。    ------ 记录了修改之后的数据
+
+	准备提交事务，从缓冲池将 redo 日志写入磁盘   -------   redo log 日志可以用来数据库宕机恢复，减少数据的损失
+	准备提交事务，执行器将 binlog 写入磁盘   ------ 主从复制  记录了数据的变化
+
+	写入binlog文件与位置   ----- 传到IO供从库监听
+	写入commit标记。事务提交完成。   -------  commit
+
+	InnoDB存储引擎的IO线程将 缓冲池 中修改好的数据写入磁盘   ----- 真正更改磁盘上的文件
 
 
+MySQL：优化数据库性能---全局性
+	服务器硬件，cpu，内存，磁盘的IO性能，交互的网络IO性能。
+
+	服务器的操作系统linux，Linux的配置参数可以进行优化以压榨服务器性能，例如打开文件数等
+
+	数据库存储引擎的选择：InnoDB、MyISAM（归档）
+
+	MySQL数据库本身的配置参数，my.cnf配置文件。例如缓冲区大小，连接数等
+
+	业务开发中：
+		表的结构设计要合理，
+		合理的添加索引
+
+	高并发下：
+		读写分离（主从复制）
+		分库分表（表结构表关系，数据的增长）
+		分区（集群 MySQL NDB Cluster）
+		多级缓存（前端CDN分发，redis，数据库缓存）
+		引入其他的搜索引擎，Elasticsearch （ELK） MongoDB 对文字类的进行模糊查询，条件查询----维护专用的同步的查询表
 
 
+MySQL：如何定位比较慢的查询
+	来源：业务驱动：其他人员或者用户的反馈，某个功能使用很慢。一般是线上找到的，会比较被动，尽量避免。
+
+	测试驱动，通过测试人员的反馈，了解到哪些功能比较慢
+
+	系统跟踪监控例如 Prometheus  SkyWalking
+
+	慢查询日志，开启MySQL的慢查询日志监控并即时优化。
+		show variables like '%quer%'      找到配置变量
+		
+		show_query_log = ON					开启慢查询日志
+		show_query_log_file					指定日志输出位置
+		long_query_time = 2					限时2秒，认定为慢查询记录日志
+		log_queries_not_using_indexes = ON		记录没命中索引的语句
+
+	慢查询日志分析工具：
+		mysqldumpslow --help  查看使用帮助
+		./mysqldumpslow -t 10 -s at /usr/local/mysql-8.0.33/data/localhost-slow.log
+	日志记录如下
+		Count:2 Time=0.01s(0.02s) Lock=0.00s(0s) Rows=3.0(6), root[root]@[192.168.1.2]
+		Count     表示该语句执行的次数
+		TIme()    表示该语句执行的最大时间与总计耗时
+		Lock()    表示所得时间
+		Rows()    表示单次返回的结果与总计返回的结果
 
 
+MySQL：索引、数据结构、类型、添加与管理、命名规范
+	索引Index 是帮助MySQL高效获取数据的一种排好序的数据结		
+		使用索引可以快速访问数据库表中的特定信息
+		索引是存储在磁盘文件中的
+	索引可以类比为一本书的目录，根据目录可以快速定位要找的内容所在的页码。
+
+	索引可以极大的减少存储引擎需要扫描的数据量，从而提高数据的检索速度。
+
+	MySQL的索引主要有两种结构B+Tree  Hash，一般情况下都说的是B+Tree结构的索引
+
+	索引的类型：
+		Normal 普通索引，大部分情况；
+		Unique 唯一索引，主键自动添加唯一索引。
+		Full Text 全文索引，用于检索长文本。
+		Spatial 空间索引，处理地理位置数据类型的字段。
+
+	命名规范：idx_xxx; uniq_xxx
 
 
+MySQL：详细了解B+Tree，为什么不用其他的数据结构
+	
+	关键：高度与查找效率；按页存储磁盘预读效率高；
+
+	二叉查找树  BST  Binary Search Tree
+	平衡二叉查找树 AVL Tree    Balanced binary search tree
+	红黑树 Red-Black Tree
+	多路平衡查找树 Blanced Tree （B Tree）
+	改进型多路平衡查找树 Balanced+ Tree  （B+ Tree）
+
+	二叉查找树：查找时间复杂度依赖于节点深度，查找效率低。两个子节点数据量大树就很高。
+		如果数据顺序增大则退化为链表
+		并且BST是高度不平衡的，查找删除与插入效率与树的高度相关。
+		并且查找数据，每一个节点都要进行一次IO读取，高度越高，效率越低
+		并且每个节点只能存储一个数据，磁盘块的利用率很低，性能无法发挥，无法发挥磁盘预读功能。
+
+	局部性原理：计科，描述了程序在访问存储器时的局部性行为。
+		根据局部性原理，CPU在访问存储器时，无论是存取指令还是读取数据，
+			所访问的存储单元都区域聚集于在一个较小的连续区域中（也就是读一片）
+		时间局部性：
+			如果一个信息正在被访问，那么近期他很可能还会被再次访问
+		空间局部性：
+			在最近的将来要用到的信息，很可能与现在正在使用的信息在空间地址上是临近的。
+		顺序局部性：
+			在程序中，大部分指令都是顺序执行的，顺序执行和非顺序执行比例约为5：1
+
+	磁盘预读：
+		机械磁盘：涉及到磁盘的转动，对于找数据，是非常耗时的
+			寻道时间+旋转时间
+		为了尽量减少IO操作，计算机系统一般采用预读的方式，预读的长度一般为页 page的整倍数。
+		
+		页是计算机管理储存器的逻辑块。硬件及操作系统中往往将磁盘存储区分割为连续大小相等的快。
+			每个存储块称为一页，在许多操作系统中，页的大小通常为4k
+		当程序要读取的数据，首先是读取主存，如果主存中不存在该数据，就会触发缺页异常。
+			此时系统会向磁盘发出读盘信号，磁盘会找到数据的起始位置并向后连续读取一页或者几页。
+			加入内存，然后返回，程序继续运行。
+		根据局部性原理，程序运行期间所需要的数据通常比较集中。
+			当一个数据被用到时，其附近的数据也会通常马上会被使用。
+			所以读取磁盘采用磁盘预读的方式，因为磁盘顺序读取的效率很高。
+			所以即使只需要读取一个字节，也会读取一页甚至多页的数据
+
+	平衡二叉查找树AVL Tree
+		任意节点的子树的高度差最大为一。提高了二叉查找树的查找效率。
+		维护平衡的代价很高，每次增加或者删除节点都会多次旋转去维护平衡状态。
+		其他的缺点同BST（树太高，节点存的少）
+
+	红黑树
+		任意节点到叶节点的链路中都包含相同数目的黑节点
+		相比于AVL，旋转次数变少了，但于大局没有影响。
+		其他缺点同上
+
+	多路平衡查找树 Balance Tree
+		每个B Tree的父节点有多个子节点，平衡是意味着左右分布均匀。
+		每个节点最大可以存放 路数-1个分支
+		每个节点最大可以有 路数 个分支
+		在非底层的节点中也存储了数据
+			
+	B Tree的数据存储（指针：子结点指针   键值：索引键   数据：表记录中除了主键之外的数据）
+		指针  键值  指针  键值  指针 .....
+			  数据        数据
+
+		指针  键值  指针  键值  指针 .....					指针  键值  指针  键值  指针 .....
+			  数据        数据									  数据        数据
+
+		键值  数据...		键值  数据...		键值  数据...		键值  数据...
+		键值  数据...		键值  数据...		键值  数据...		键值  数据...
+
+		缺点，每个数据都需要从顶层根节点出发去查找，相比于AVL仅仅优化了部分IO性能
+		索引在数字上可能是连续的 1 2 3 4 5 6，但是对应他们每个查找的路径却不同。
+			导致了性能的不稳定。
+		并且相比于B+Tree，节点（页）既存储指针，又存贮键值，降低了节点存储指针的效率，
+			随着层数增加，效率损失按照2的次方计算。也就是每个节点持有的子节点是B+Tree的一半。
+
+	B+Tree的优势，改进的多路平衡查找树
+		节点只存储指针（索引键），数据全部存储在叶子节点。并且所有的叶子节点以双向链表的形式链接。
+		页4kb，指针和索引键都是64位的 8b 那么一个节点可以存(4096-8)/(8+8) = 255
+			就是255个索引键和256个子节点指针（和一个自身地址） 2^8
+			2^24 是16777216 就是所谓的2000w单表，此时索引大小 (1+256 +256*256) *4KB=263172KB=257MB（一个）
+		查找时，根据索引值，按页去磁盘读取索引到内存中。
+
+		叶子节点是一个顺序增长的双向链表，很方便的定位前后数据，范围查找优势很大。
+			查找树找到范围查找的起点，然后利用链表读取范围，还可以利用磁盘预读的优势。
+
+	B+ Tree的数据存储
+		指针  键值  指针  键值  指针 .....
+
+		指针  键值  指针  键值  指针 .....					指针  键值  指针  键值  指针 .....
+
+		双向链表（数据）
+
+	总结：
+		B+Tree 中间非叶子节点没有数据只有索引，相同的磁盘页节点越多，数据量一样B+树高度更低，IO更少
+		B+Tree每次查找必须查找到叶子节点，性能稳定
+		B+Tree的范围查询更有优势
 
 
+MySQL的索引：
+	为什么建议用自增数字作为主键索引：
+		自增主键时连续的，插入过程中能减少页的分裂，当一页写满就会在当前索引节点页的后续位置开辟一个新页，减少数据移动。
+		非自增主键往往不连续，例如UUID是随机的。新纪录就会被插入到现有索引页中间的某个随机位置。
+			导致原来索引页的数据发生移动。频繁的移动会带来很多开销。带来很大索引维护的消耗。
+		可以自己定义全局唯一ID的生成逻辑，既满足顺序自增，又有随机性与唯一性。
+			例如拼接 自增 + 时间戳 + 设备ip网络ip + 雪花算法给了4位毫秒级的重复量 +请求code消息code之类
+
+	主键：
+		InnoDB会选择主键作为主键索引，
+		没有主键，InnoDB会选择第一个不包含有Null值的唯一索引作为主键索引。
+		如果上述都没有，InnoDB会选择内置的6字节长的ROWID作为主键索引，是随着行记录的写入而递增的。
 
 
+MySQL：索引的一些叫法
+	主键索引：
+
+	辅助索引，也叫二级索引  Secondary Index 使用主键之外的字段建立索引。
+		二级索引中的叶子节点只存储了索引字段的值和主键值，不包含完整的表记录。
+		你要是说这表就两个字段当我没说，
+
+	聚集索引也叫聚簇索引 Clustered Index，非聚集索引，也叫非聚簇索引。
+		主键和数据在一起的索引叫聚集索引，聚簇索引的叶子节点存储了整个表的行数据，
+			主键索引就是一种聚集索引。
+		主键和数据不在一起的索引叫非聚集索引，
+			上述的二级索引，或者MyISAM的索引（没存数据，存的是数据的地址）是非聚集索引
+
+	回表查询：
+		当通过二级索引查询数据时，InnoDB 会首先在二级索引的 B+Tree 中查找匹配的索引键值，
+		然后通过存储在叶子节点中的主键值回表到聚簇索引（主键索引）中获取完整的行数据。
+
+	索引覆盖：可以用来优化SQL语句的执行效率
+		查找的字段是添加了索引的字段。用索引的体积（空间）换执行效率（时间）
+		之查找一个字段，该字段在索引上只需要走索引，不需要回表查询。就大大提高了效率。
+
+	联合索引：
+		对于想要同时查找多个字段，就在多个字段上建立联合索引，
+			联合索引将同时包含这多个字段的数据和主键数据。
+			这样在根据其中某一个字段查找时，就可以直接根据索引找到所有查询所需字段的数据，无需回表。
+		用更大的空间来换执行效率。
+
+	索引下推：Index Condition PushDown 简称ICP
+		MySQL 5.6新增特性，主要作用是用来减少回表查询的次数，提高查询效率。
+		连接层 ---- Server层 ---- 索引引擎层 ---- 数据层
+		多个查询条件，xxx and xxx 
+			如果有查询条件的字段上有索引，多个字段有联合索引。
+			那么查询条件都会在索引中判断。
+		如果多个查询条件例如三个条件，只有两个有联合索引，
+			那么在联合索引筛选完毕，回表到主键索引拿到全部行数据后，
+			交给Server层对于第三个条件再进行过滤
+		也就是只要有索引就优先走索引去筛选，减少回表要查询的数据
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+MySQL：InnoDB与MyISAM的区别
+	
+		InnoDB   ----     MyISAM
+		行级锁				表级锁
+		支持事务		 不支持事务
+		支持外键		不支持外键
+如果断电-支持数据恢复   容易发生数据损坏和不一致性
+    主键索引是聚簇索引    非聚簇索引（存的是数据的地址）
 
 
 *****************************************************************************************************************************************
-SpringBoot：
+SpringBoot：自动装配原理(流程)
+	@SpringBootApplication
+		springboot程序的main方法注解
+		
+	@EnableAutoConfigureation
+		自动装配的核心注解
+
+	AutoConfigurationImportSelector组件
+		自动装配注解导入的组件，准备夺取文件
+
+	SpringFactoriesLoader读取
+		META-INF/spring.facroties文件 或者
+		org.springframework.boot.autoconfigure.AuroConfiguration.imports文件（sprinboot3.x之后）
+		中的所有 自动配置类（100多项）
+		-----自动导包的核心，自定义的就手动加入其中
+		这种读取配置文件的思想，是Java开发的SPS思想（单一服务点）
+
+	条件注解进行过滤
+		举例，在RabbitAutoConfiguration类上有注解 @ConditionalOnClass({RabbitTemplate.class, Channel.class})
+		项目引入了(maven)相关的jar包，引用了相关的类就会进行自动配置。
+		自配置类会自动组装 例如 @Bean public RabbitTemplate rabbitTemplate(){}，然后纳入IoC容器管理。
+		这样我们在代码中就可以直接 @Autowire 注入 RabbitTemplate类来使用了。
+
+	ImportSlector接口
+		将符合条件的Bean，加入到IoC容器中
+
+	BeanDefinition
+		在Bean初始化之前，先生成Bean的定义文件，描述文件（包名，类名，属性）
+		此时Bean还没有实例化
+
+	实例化Bean对象，放入Spring的IoC容器
+		根据BeanDefinition实例化Bean，
+
+	结论：springboot的左右的自动配置，都在启动类中被扫描并加载。加载的多有自动配置类都在spring.factories
+		但是加载了不一定就生效。需要判断条件是否成立。（项目是否引用了相关的依赖jar包）
+		只要导入了starter，就有对应的启动器。具备了启动器，自动配置就会生效，就配置成功了。
+
+	优点：只需要管理依赖，加入相应的jar包。Springboot就会自动加载并注入相关的对象，无需手动生成bean对象。
+			配置信息有默认的，也可以手动提供，自定义的。
+			让开发者只需要关注 依赖的引入与管理，参数的配置。无需关注复杂的启动初始化与配置等（例如使用注解或者xml文件去配置bean）。
 
 
+SpringBoot：手写一个SpringBoot Starter，并实现自动装配
+	可以直接参考开源项目的实现
+
+	手写starter项目，引入其他项目的依赖
+
+	写一个实现自动装配逻辑的项目，在classpath下写一个META-INF/spring.factories文件
+
+	在spring.factories中添加
+		org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.leowork.MyConfiguration
+		让springboot可以识别到该自动配置类
+
+	在Configuration类上添加注解 @Congifuration   @Conditional({条件})
+		方法上的条件注解  @ConditionalOnMissingBean
+
+	在Configuration类中编写具体自动配置的代码，读取文件，生成bean对象 @Bean等操作。
+		让别的开发者只需要引入该项目，无需关注并编写具体的配置与启动代码。
 
 
+SpringBoot相比于Spring的优势:约定由于配置--按约定编程--减少对于配置的维护。专注于开发
+
+	自动装配 --- 免去了逐一配置每一个依赖，避免了繁琐的编写与维护
+	依赖管理 --- 优化了对于版本控制的管理，相关之间版本兼容关系，
+
+	旧的：例如：web.xml  applicationContext.xml  applicationContext-datasource.xml
+				-duubo.xml   -eladticsearch.xml  -mongodb.xml  -mybatis.xml  -redis.xml  -rabbitmq.xml
+				等等众多的xml文件 
+
+	新的：只要application.yml  再引入几个版本控制 dev test 切换数据源等。
+		
+	springboot具有自己的main方法入口，具有自己内嵌的tomcat服务器，不需要单独部署Tomcat。
+
+	springboot使用starter来简化maven的控制，并可以自动管理所有jar包的版本。
+
+	springboot程序可以直接打包成jar包运行，部署简单。
 
 
+SpringBoot项目如何兼容老的Spring项目
+	使用 @ImportResource 导入老项目中的xml配置文件
+	例如某个Bean是在xml文件中进行配置的，要想将其被springboot使用，加入springboot的Ioc容器，
+		就需要在启动器上面添加 @ImportResource（location）注解，使其根据xml文件进行创建bean并纳入管理
 
 
+JavaConfig：即注解式开发配置
+	Java5推出
+	spring3.0 JavaConfig代替了xml配置
+
+	举例： @Configuration 就是以前的xml文件的注解式版本，
+		将原来繁琐的bean定义，变为简单的编码，并可以比较方便的自定义
+
+	@Bean 对应着 xml文件中的 <Bean>标签
+
+	@ComponentScan 配置包扫描
+
+	@EnableWebMvc  开启webMvc
+
+	@ImportResource() 导入指定路径的xml文件
+
+	@PropertiesSource()  导入指定路径的配置文件 .properties文件。加载并读取其中的配置信息（键值对），
+
+	@Value 写在属性字段上。配合上述读去配置文件的注解，该 @Value可以根据 ${} 占位符，把对应的值赋值给属性字段。
 
 
+SpringBoot如何排除某些类的自动装配
+	方法：配置:
+		spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoconfiguration
+
+	方法：启动类上添加注解的属性
+		@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
 
 
+SpringBoot如何实现异步调用（要理清controller与service的关系，api与业务流程的设计与梳理更加重要）
+	asynchronous call 异步调用
+		一个无需等待被调用函数的返回值，就能让操作继续进行的办法
+	
+	应用场景：
+		对于一些不需要在主流程线程中执行的任务，例如注册时发送欢迎邮件。
+		对于不需要实时等待计算结果的任务，例如记录业务执行日志。
+		利用多核CPU并发执行的任务，例如下单时，同时去获取  用户信息例如住址---商品信息----交易信息用户余额等
+		将这类任务放到另一个线程去执行，避免主线程的阻塞和等待。
+
+	实现手段：
+		RabbitMQ，发送信息给不同的生产者
+
+		@EnableAsync（启动类） + @Async（Service方法） + ListenableFuture + ThreadPoolTaskExecutor  线程池方案
+									（Service方法返回值）CompletableFuture + ThreadPoolTaskExecutor
+			然后在Controller中并发调用这些支持异步的service方法，
+			CompletableFuture.allOf().get();  接收结果等待所有异步任务完成，进行业务逻辑处理，并返回前端。
+			默认SpringBoot使用的式SimpleAsyncTaskExecutor，结合之前的线程池知识，我们可以自定义线程池来最大化性能
+				@Bean(name = "taskExecurtor")
+				public Executor taskExecutor(){
+					new ThreadPoolTaskExecutor  (是Spring对于ThreadPoolExecutor的一个封装)
+					配置好线程池参数
+				}
+
+			其实就是java线程池的Spring形态（ @Autowire注入），原来线程池中任务的编写，调度以及定时，spring都可以相应实现
+		
+		异步任务的编写与提交
+		CompleteableFuture<Void> goodsFuture = Comp[letableFuture.runAsync(() -> {
+			某某service方法调用
+			数据处理
+			日志记录等等
+
+		}, applicatonTaskExecutor)  // 指定要加入的线程池
+		线程池中的execute submit invokeAll 等方法，对应 runAsync方法
 
 
+SpringBoot默认是JDK动态代理还是CGLIB动态代理
+	CGLIB动态代理：
+		spring.aop.proxy-target-class = true 默认true就是CGLIB动态代理，false就是JDK动态代理
+	原因：
+		JDK动态代理是基于接口的，也就是代理类和被代理的类要实现一个公共接口，
+		注入的时候例如写实现类 @Resource private GoodsServiceImpl goodsService 就会报错。
+			有可能导致意外的类型转换异常
+		
+		而CGLIB动态代理是基于继承的，可以代理任何类型的目标类。
+			除了被final修饰的类，final修饰的方法，不可被继承也就无法代理。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		所以CGLIB可以涵盖所有JDK动态代理的情况，SpringBoot为了保证AOP功能可以应用与任何类型的Bean，无论是否实现接口
+			采用CGLIB作为代理的实现方式
 
 
 *****************************************************************************************************************************************
-SpringCloud
+SpringCloud：用过哪些组件
+
+	注册中心:Nacos
+		Zookeeper、Eureka、Apollo、Consul
+
+	负载均衡：Nacos自带有负载均衡SpringCloudAlibabaLoadBalancer
+		Ribbon，Dubbo，LoadBalancer
+
+	服务调用：OpenFeign
+		Feign，Dubbo RPC，gRPC
+
+	配置中心：Nacos
+		SpringCloudConfig
+
+	熔断降级 GatewaySpringCloud
+		Sentinel
+
+	分布式事务：Seata
+
+	服务网关 GatewaySpringCloud
+		Zuul2.x Nginx
+
+	链路追踪：Skywalking
+		Zipkin
 
 
+SpringCloud：的理解，在整个微服务体系中的作用
+	为开发人员提供了一套集成好的微服务解决方案，不在需要自行集成各类组件去解决不同问题。降低了开发难度
+	SpringCloud提供了统一的标准。为Spring生态注入了更强大的生命力。
+		常见问题：负载均衡，服务注册，配置管理，服务调用，路由拦截，熔断限流等等
 
 
+SpringCloud：服务熔断，服务降级
+	服务熔断：当服务A调用服务B时，如果此时服务B不可用，那么上游的服务A为例保证自己不受影响，旧切断调用服务B，防止服务雪崩发生，
+	提前做好一种兜底措施，例如返回预先准备好的数据，或者记录数据信息到数据库，redis中，后续进行补救。
+
+	服务降级，上述的B服务用不了了，就采用备选方案C服务，C是消耗很小的也不会提供很多服务，降低B受损的影响。
+		当系统高负载过高时，对非核心的业务服务进行关闭，来保证核心业务的正常执行。
+
+	比较：都是为了保证服务的可用性，防止系统整体负载过大。
+			都是表现出部分服务暂时不可用的状态
+	不同：服务熔断通常是下游服务故障引起。
+			而服务降级是从系统整体符合考虑
+
+SpringCloud：为什么要对项目系统进行拆分。
+	单体 --->  微服务 分布式
+
+	单体项目的劣势：
+		(团队协作)
+		项目随着业务功能的增加，功能模块增多，业务复杂度增大，代码量也增加，在多人团队中，
+			各开发人员为了实现自己的功能，有时候经常需要修改另一个开发人员的代码，经常会出现代码的冲突;
+
+		(耦合度高)
+		一个地方的功能修改经常导致另外一个地方的功能出现异常;
+
+		(只能整体测试)
+		每次一个小小的修改，都需要测试团队对很多功能进行测试，效率非常低，测试团队也充满抱怨;
+
+		(扩展性，健壮性差)
+		每次新增新的需求，开发效率都比较低下，由于所有功能都在一个项目中，导致业务代码逻辑变得非常复杂，
+			经常陷入牵一发动全身的状态，团队成员也不敢轻易修改代码，响应新需求的速度低:
+
+		(维护难度高)
+		由于所有功能在一个项目中，代码量极大，代码的可读性可维护性可扩展性都变得很差，也导致团队成员不稳;
+
+		(结合上述健壮性差，测试难度高----升级迭代难度高)
+		出现一些更好的新技术，也不敢轻易升级技术，升级非常困难，升级可能产生各种问题，调试和测试会消耗大量的时间和精力，团队生成力极低;
+
+		(只能整体上下线)
+		项目迭代上线效率低，每次上线，全体成员，技术团队、测试团队、运维团队都需要加班加点，而且常常都是胆战心惊的;
+
+	微服务分布式的优点：
+		代码拆分：即使总代码几十万行，但是每一个服务的代码也就几万行，由几人的小团队来维护
+			团队只需要专注于自己的业务，其他的调用接口，api，RPC即可
+
+		上述拆分，也会带来代码冲突降低的好处，且每个服务可以单独测试，测试难度降低。
+
+		新增业务需求只需要新增服务即可，然后去调用原有系统的微服务接口
+
+		每个模块功能细分，可以追求当前领域的新技术，高效迭代进化。
+
+		上线更新与维护，以服务模块为单位，哪个好了上那个，需要升级就下下来。
 
 
+SpringCloud的注册中心
+	Nacos，Eureka，Zookeeper（Dubbo），Apollo（携程的），Consul
+
+	相似点：提供服务注册和发现功能。支持服务的心跳机制健康检查。支持高可用。
+
+	不同点：
+		Nacos支持主动对微服务进行状态检测，临时实例采用被动心跳检测，永久实例采用主动检测。
+			临时实例心跳检测如果不健康则会从注册中心中阐述，永久实例（本地内嵌数据库或者链接mysql）不会删除
+			支持服务列表变更时的主动消息推送，服务列表更新会更加及时。
+		Nacos集群支持两种模式，默认是AP模式，当集群中存在非临时实例时，采用CP模式
+			而Eureka只支持AP模式
+		Nacos有注册中心和配置中心
+			而Eureka只有注册中心
+		Nacos具备优秀的后台管理界面，用于服务上下线以及流量管理负载均衡以及配置的编写
+			而Eureka的后台只能查看，需要使用api手动调用完成服务的上下线且不具备负载均衡
+		Nacos由SpringCloudAlibaba开源维护
+			而Eureka已经闭源了
+
+	注册中心应该是AP还是CP
+		AP，优先保证一致性。微服务框架一般都提供了服务容错和重试功能。减轻注册中心的压力
+		如果采用CP，那么每当有服务实例上线下线，都需要等待注册中心集群中的数据完全一致才算注册或删除成功。
+			如果应用实例频繁上下线，会导致注册中心压力增大，服务注册与发现的效率降低。
+
+
+SpringCloud：ACID、BASE、CAP理论
+	ACID是传统数据库中常用的理念，追求的是数据的强一致性。
+		Atomicity 原子性
+		Consistency 一致性
+		Isolation 隔离性
+		Durability 持久性
+
+	BASE理论是在分布式环境下，牺牲强一致性来换取高可用性的策略。
+		Basically Available 基本可用，
+			部分系统故障时，允许损失部分可用性
+		Soft State 软状态：
+			允许系统在不同节点的数据副本之间进行数据同步的过程允许延时。允许中间状态（主从复制的延迟）
+		Eventually Consistent 最终一致性：
+			所有的数据副本，在一段时间的同步之后，最终能够达到一致，而不是实时一致
+
+	CAP理论是指 分布式系统中，一致性，可用性，分区容错性不可能三角，要么CP，要么AP
+		Consistency 一致性
+		Availability 可用性
+		Tolerance of network Partition 分区容错性
+			网络故障时，系统仍能继续工作
+
+		CP：一致性优先，牺牲可用性来确保一致性
+
+		AP：可用性有限，允许短暂的不一致存在，但是通过最终一致性确保一致。
+
+
+SpringCloud：接口的幂等性
+	唯一请求ID + redis （Controller接口幂等）
+
+	概念：Idempotent 抽象代数中：N次变换与1次变换的结果相同
+		幂等函数或者幂等方法，是指可以使用相同的参数重复执行，并能获得相同结果的函数。
+		对于编程而言，某个方法使用相同参数调用多次与调用一次，对于其业务指责而言产生的效果是相同的。
+			并且不会导致系统数据出错，那么它就具有幂等性
+
+		也就是用户对于统一操作发起的一次请求或多次请求锁产生的影响是一样的，不会因为多次调用（点击）而产生副作用
+
+		幂等性也就是 多次执行无副作用（副作用就是对结果产生变化，破坏或者不可预料的结果）
+
+	场景：
+		网络波动导致的重复请求
+
+		用户重复操作，重复下单，重复触发躲避交易
+
+		应用的失败或者超时重试机制（RPC重试，业务层重试逻辑等）
+
+		定时任务的重复执行
+
+		第三方平台的接口回调，例如支付成功回调接口，因为异常导致多次回调
+
+		中间件根据自身的特性，也有可能进行重试
+
+		用户重复点击提交按钮或者重复刷新页面
+
+		使用浏览器误操作，重复提交表单，例如后退操作，历史记录等
+
+		浏览器重复的HTTP请求
+
+	如何设计接口的幂等性：
+		对于分布式微服务的架构，首先要名且在哪一层解决幂等性
+
+		展示层 --- 接入层（网关，认证中心） --- 业务层 -- 数据访问层 --- 数据层
+					   日   志   系   统   与   监   控   系   统
+
+		前端可以进行防抖操作，以及适当的拦截。
+
+		对于数据的查询操作，利用布隆过滤，缓存响应结果，redis缓存，优化数据库等方式提高效率。幂等性要求不高，
+
+		业务层针对每个特定的微服务所面临的请求类型与数量，制定相应的幂等性策略。
+			例如 用户中心，商品中心，订单中心，消息中心，通知系统，积分系统等等
+		重点关注的是对于数据的 修改 操作，也就是数据访问层的调用要保持幂等。
+			
+	解决方案：
+		插入mysql的操作，可以使用唯一性限制，唯一索引，插入重复的数据会报错。
+
+		Token（全局唯一请求ID） + redis缓存
+			前端携带token或者唯一请求ID，或者后端生成绑定此次请求对象。将请求ID进行缓存。
+			之后处理请求，根据业务需求缓存该次请求的响应结果json，
+				如果处理成功，就打标记该ID已处理完成，redis设置过期时间
+				短时间内的相同请求ID过来，不予处理，或者返回上次请求的结果
+				
+			确保前端发送相同请求会携带相同的请求ID，如果期间没有其他修改操作，可以直接返回缓存中的结果
+				如果就清空上次缓存
+
+
+SpringCloud：分布式事务 ---- 看多少个数据源连接池
+	redis redission 实现分布式锁
+
+	redis的lua脚本保证多个redis操作原子性
+
+	方案：2PC、3PC、TCC、本地消息异步确认、可靠消息最终一致性、
+	
+	解决框架：Seata（实现了增强版2PC，TCC）、RabbitMQ（半消息+超时检查）
+
+	事务是保证对数据库进行多个读写操作的一致性。
+		推荐尽量避免，会带来系统的复杂性与效率低下。
+
+	分布式事务是要保证多个计算节点（多个链接）对于多个数据节点（多个库）的操作的原子性，要明确所保护的粒度。
+
+	本地事务，仅支持单库事务。
+
+	Spring的事务管理只能管理单个数据源链接池的情况
+
+	重点就是同时有几个数据源链接池
+
+
+SpringCloud：分布式系统的限流
+	Gateway 路由断言工厂  限流熔断降级
+
+	redis计数器实现限流、令牌桶限流算法
+
+	计数器：每次请求计数+1，计数器值大于60并且与第一次请求在1s内，就拒绝，达成1s 60次的请求限流。但是要每秒重置计数器。
+
+	令牌桶算法：redis维护一个桶，桶内令牌的增加速度一定，请求过来持有令牌才可以进行下一步去处理（令牌可以是全局唯一ID绑定请求）
+		没有拿到令牌的在外面一个队列等待。队列满了抛弃请求返回繁忙。--429 TooManyRequests
+
+	Nginx限流：
+		配置 ngx_http_limit_req_module 模块
+		nginx.conf
+			limit_req_zone $binary_remote_addr zone = prip:10m rate=1r/s;
+			limit_req_zone $server_name zone = perserver:10m rate=2r/s;
+	
+	OpenResty限流（Nginx扩展版 可以使用Lua脚本实现限流逻辑编写）
+
+	Sentinel限流 管理后台配置
+
+	Redis+Lua脚本限流 配合AOP实现，拦截请求，
+
+	SpringCloudGateway限流  RateLimiter Filter ---- Bucket4j
 
 
 
