@@ -223,7 +223,7 @@ mysql中的业务逻辑移到service，并且处理掉以往因业务缺陷导�
 
 ### 技术选型：
 
-**后端：**SpirngBoot，MyBatis，RabbitMQ，Nginx，Druid，JWT，SpringSecurityOauth2，Seata
+**后端：**SpirngBoot，MyBatis，RabbitMQ，Nginx，Druid，JWT，，Seata
 
 **存储：**MySQL，ElasticSearch，Redis，MongoDB，OSS，MinIO
 
